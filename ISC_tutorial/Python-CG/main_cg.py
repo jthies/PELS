@@ -33,6 +33,8 @@ def get_argparser():
                     help='Sorting scope sigma for SELL-C-sigma format.')
     parser.add_argument('-seed', type=int, default=None,
                     help='Random seed to make runs reproducible')
+    parser.add_argument('-poly_k', type=int, default=0,
+                    help='Use a degree-k polynomial preconditioner based on the Neumann series.')
     return parser
 
 if __name__ == '__main__':
@@ -101,9 +103,23 @@ if __name__ == '__main__':
     # take compilation time out of the balance:
     compile_all()
 
+    A_prec = A
+    b_prec = b
+    if args.poly_k>0:
+        A_op = poly_op(A, args.k)
+        b_prec = copy(b)
+        A_prec.prec_rhs(b, b_prec)
+
     t0 = perf_counter()
-    x, relres, iter = cg_solve(A,b,x0,tol,maxit)
+    x_prec, relres, iter = cg_solve(A_prec,b_prec,x0,tol,maxit)
     t1 = perf_counter()
+
+    if args.poly_k>0:
+        x = copy(x)
+        A_prec.prec_rhs(x_prec, x)
+    else:
+        x = x_prec
+
     t_CG = t1-t0
 
     x = to_host(x)
