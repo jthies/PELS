@@ -18,7 +18,10 @@ def cg_solve(A, b, x0, tol, maxit, verbose=True):
     axpby(1.0,x0,0.0,x)
 
     #r = A*x
-    spmv(A, x, r)
+    if hasattr(A, 'apply'):
+        A.apply(x, r)
+    else:
+        spmv(A, x, r)
     #r = b - r
     axpby(1.0, b, -1.0, r)
     #p = r
@@ -38,7 +41,10 @@ def cg_solve(A, b, x0, tol, maxit, verbose=True):
             break;
 
         # q = A*p
-        spmv(A, p, q)
+        if hasattr(A, 'apply'):
+            A.apply(p, q)
+        else:
+            spmv(A, p, q)
 
         pq = dot(p,q)
         alpha = rho / pq
