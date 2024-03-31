@@ -76,7 +76,7 @@ class poly_op:
 
         See class description for details.
         '''
-        self._neumann(self.U, self.k, w, self.tmp)
+        self._neumann(self.U, self.k, w, self.t1)
         spmv(self.A1, self.t1, self.t2)
         self._neumann(self.L, self.k, self.t2, v)
 
@@ -95,7 +95,7 @@ class poly_op:
         '''
         # This is the naive implementation with 'back-to-back' spmv's.
         # Every intermediate vector M^jy is computed explicitly.
-        v = copy(w)
+        axpby(1.0, w, 0.0, v)
         for j in range(k):
             spmv(M,v,self.t1)
             axpby(1.0,self.t1,1.0,v)
