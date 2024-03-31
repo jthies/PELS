@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.sparse import *
-import kernels
+from kernels import *
 
 class poly_op:
     '''
@@ -30,6 +30,8 @@ class poly_op:
     def __init__(self, A, k):
 
         self.k = k
+        self.shape = A.shape
+        self.dtype = A.dtype
         # store the inverse of the square-root of the diagonal
         # s.t. isqD*A*isqD has ones on the diagonal.
         self.isqD = spdiags([1.0/np.sqrt(A.diagonal())], [0])
@@ -37,12 +39,18 @@ class poly_op:
         self.L = tril(self.A1,-1).tocsr()
         self.U = triu(self.A1,1).tocsr()
 
+        self.t1 = np.empty(self.shape[0], dtype=self.dtype)
+        self.t2 = np.empty(self.shape[0], dtype=self.dtype)
+
         # in case A has CUDA arrays, also copy over our compnents:
         self.A1 = to_device(self.A1)
         self.L = to_device(self.L)
         self.U = to_device(self.U)
 
-    def prec_rhs(b, prec_b):
+        self.t1 = to_device(self.t1)
+        self.t2 = to_device(self.t2)
+
+    def prec_rhs(self, b, prec_b):
         '''
         Given the right-hand side b of a linear system
         Ax=b, computes prec_b=M1\b s.t.(this op)(M2x)=M1b solves the
@@ -50,14 +58,14 @@ class poly_op:
         solution vector M1x
         '''
         diag_spmv(self.isqD, b, self.t1)
-        neumann(self.L, self.k, self.t1, prec_b)
+        self._neumann(self.L, self.k, self.t1, prec_b)
 
-    def unprec_sol(prec_x, x):
+    def unprec_sol(self, prec_x, x):
         '''
-        Given the left-preconditioned solution vector prec_x = M2\x,
+        Given the right-preconditioned solution vector prec_x = M2^{-1}x,
         returns x.
         '''
-        _neumann(self.U, self.k, prec_x, x)
+        self._neumann(self.U, self.k, prec_x, x)
         diag_spmv(self.isqD, x, x)
 
     def apply(self, w, v):
@@ -68,10 +76,12 @@ class poly_op:
 
         See class description for details.
         '''
-        _neumann(self.U, self.k, w, self.tmp)
+        self._neumann(self.U, self.k, w, self.tmp)
         spmv(self.A1, self.t1, self.t2)
-        _neumann(self.L, self.k, self.t2, v)
+        self._neumann(self.L, self.k, self.t2, v)
 
+
+# protected
     def _neumann(self, M, k, w, v):
         '''
         Apply truncated Neumann-series preconditioner to w, returning v.
@@ -85,7 +95,9 @@ class poly_op:
         '''
         # This is the naive implementation with 'back-to-back' spmv's.
         # Every intermediate vector M^jy is computed explicitly.
-        copy(x,y)
+        v = copy(w)
         for j in range(k):
-            spmv(M,y,self.t1)
-            axpby(1.0,self.t1,1.0,y)
+            spmv(M,v,self.t1)
+            axpby(1.0,self.t1,1.0,v)
+
+

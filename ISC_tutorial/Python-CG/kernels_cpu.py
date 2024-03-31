@@ -1,5 +1,5 @@
 import numpy as np
-from numba import jit, prange, get_num_threads
+from numba import jit, prange, get_num_threads, float64
 import scipy
 
 # Benchmarks run on 2x 32-core Intel Xeon 6448Y "Sapphire Rapids"
@@ -23,6 +23,14 @@ def copy_vector(x):
     for i in prange(x.size):
         y[i] = x[i]
     return y
+
+@jit((float64[:],float64[:],float64[:]),nopython=True, parallel=True)
+def vscale(v, x, y):
+    '''
+    Vector scaling y[i] = v[i]*x[i]
+    '''
+    for i in prange(x.size):
+        y[i] = v[i]*x[i]
 
 @jit(nopython=True, parallel=True)
 def copy_csr_arrays(Adata, Aindptr, Aindices):

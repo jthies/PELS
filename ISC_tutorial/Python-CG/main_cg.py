@@ -4,6 +4,7 @@ from scipy.sparse import *
 from scipy.io import mmread
 from pcg import cg_solve
 from kernels import *
+from poly_op import *
 from sellcs import sellcs_matrix
 
 from matrix_generator import create_matrix
@@ -106,7 +107,7 @@ if __name__ == '__main__':
     A_prec = A
     b_prec = b
     if args.poly_k>0:
-        A_op = poly_op(A, args.k)
+        A_prec = poly_op(A, args.poly_k)
         b_prec = copy(b)
         A_prec.prec_rhs(b, b_prec)
 

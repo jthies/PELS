@@ -44,6 +44,19 @@ def cu_init(x, val):
         x[i] = val
 
 
+# TROET
+@jit(nopython=True, parallel=True)
+def cu_vscale(v, x, y):
+    '''
+    Vector scaling y[i] = v[i]*x[i]
+    '''
+    tx = cuda.threadIdx.x
+    bx = cuda.blockIdx.x
+    bdx = cuda.blockDim.x
+    i = bx * bdx + tx
+    if i < x.size:
+        y[i] = v[i]*x[i]
+
 # dot product is complicated on GPU's...
 # we first define a reduction operation that will be
 # used to get the final result over all thread blocks,
@@ -142,6 +155,12 @@ def axpby(a,x,b,y):
 def init(v, val):
     cu_init.forall(v.size)(v,val)
     cuda.synchronize()
+
+def vscale(v, x, y):
+    cu_vscale.forall(x.size)(v, x, y)
+    '''
+    Vector scaling x[i] = v[i]*x[i]
+    '''
 
 def dot(x,y):
     ##return cu_dot2.forall(x.size)(x,y)

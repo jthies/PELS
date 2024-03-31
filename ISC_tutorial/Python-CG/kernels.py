@@ -123,6 +123,14 @@ def spmv(A, x, y):
         store['spmv'] += 8*A.shape[0]
         flop['spmv'] += 2*A.nnz
 
+def diag_spmv(A, x, y):
+    if cuda and is_cuda_array(x):
+        gpu.vscale(A.cu_data, x, y)
+    else:
+        print(type(A))
+        print(type(A.data))
+        print(A.data.shape)
+        cpu.vscale(A.data.reshape(x.size), x, y)
 
 def clone(v):
     w = None
