@@ -44,9 +44,12 @@ def compile_all():
     # compile GPU kernels:
     if available_gpus()>0:
         x = to_device(x)
+        tmp = from_device(x)
         y = to_device(x)
         A1 = to_device(A1)
+        tmp= from_device(A1)
         A2 = to_device(A2)
+        tmp = from_device(A2)
         init(x,a)
         z = clone(x)
         s=dot(x,y)
@@ -81,6 +84,12 @@ bench_map = {'spmv': 'triad', 'axpby': 'triad', 'dot': 'load', 'init': 'store'}
 def to_device(A):
     if available_gpus()>0:
         return gpu.to_device(A)
+    else:
+        return A
+
+def from_device(A):
+    if available_gpus()>0:
+        return gpu.from_device(A)
     else:
         return A
 

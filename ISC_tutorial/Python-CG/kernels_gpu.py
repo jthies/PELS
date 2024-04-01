@@ -20,6 +20,15 @@ def to_device(A):
     else:
         return cuda.to_device(A)
 
+def from_device(A):
+    if type(A) == scipy.sparse.csr_matrix or type(A) == sellcs.sellcs_matrix:
+        A.data = A.cu_data.copy_to_host()
+        A.indices = A.cu_indices.copy_to_host()
+        A.indptr = A.cu_indptr.copy_to_host()
+        return A
+    else:
+        return cuda.to_device(A)
+
 ################
 # CUDA kernels #
 ################

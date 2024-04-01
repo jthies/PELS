@@ -41,6 +41,7 @@ class poly_op:
 
         self.t1 = np.empty(self.shape[0], dtype=self.dtype)
         self.t2 = np.empty(self.shape[0], dtype=self.dtype)
+        self.t3 = np.empty(self.shape[0], dtype=self.dtype)
 
         # in case A has CUDA arrays, also copy over our compnents:
         self.A1 = to_device(self.A1)
@@ -49,6 +50,7 @@ class poly_op:
 
         self.t1 = to_device(self.t1)
         self.t2 = to_device(self.t2)
+        self.t3 = to_device(self.t3)
 
     def prec_rhs(self, b, prec_b):
         '''
@@ -97,7 +99,7 @@ class poly_op:
         # Every intermediate vector M^jy is computed explicitly.
         axpby(1.0, w, 0.0, v)
         for j in range(k):
-            spmv(M,v,self.t1)
-            axpby(1.0,self.t1,1.0,v)
+            spmv(M,v,self.t3)
+            axpby(1.0,self.t3,1.0,v)
 
 

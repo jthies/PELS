@@ -116,8 +116,8 @@ if __name__ == '__main__':
     t1 = perf_counter()
 
     if args.poly_k>0:
-        x = copy(x)
-        A_prec.prec_rhs(x_prec, x)
+        x = clone(x_prec)
+        A_prec.unprec_sol(x_prec, x)
     else:
         x = x_prec
 
