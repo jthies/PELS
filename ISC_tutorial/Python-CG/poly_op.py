@@ -36,8 +36,8 @@ class poly_op:
         # s.t. isqD*A*isqD has ones on the diagonal.
         self.isqD = spdiags([1.0/np.sqrt(A.diagonal())], [0])
         self.A1 = self.isqD*A*self.isqD
-        self.L = tril(self.A1,-1).tocsr()
-        self.U = triu(self.A1,1).tocsr()
+        self.L = -tril(self.A1,-1).tocsr()
+        self.U = -triu(self.A1,1).tocsr()
 
         self.t1 = np.empty(self.shape[0], dtype=self.dtype)
         self.t2 = np.empty(self.shape[0], dtype=self.dtype)
@@ -84,11 +84,11 @@ class poly_op:
 
 
 # protected
-    def _neumann(self, M, k, w, v):
+    def _neumann(self, M, k, rhs, sol):
         '''
-        Apply truncated Neumann-series preconditioner to w, returning v.
+        Apply truncated Neumann-series preconditioner to rhs, computing sol.
 
-        If A = I-M, the Neumann series to approximate v=A^{-1}w is defined as
+        If A = I-M, the Neumann series to approximate v=A^{-1}rhs is defined as
 
         inv(I-M) = sum_{k=0}^{\inf} M^k.
 
@@ -97,9 +97,10 @@ class poly_op:
         '''
         # This is the naive implementation with 'back-to-back' spmv's.
         # Every intermediate vector M^jy is computed explicitly.
-        axpby(1.0, w, 0.0, v)
+
+        axpby(1.0, rhs, 0.0, sol)
         for j in range(k):
-            spmv(M,v,self.t3)
-            axpby(1.0,self.t3,1.0,v)
+            spmv(M,sol,self.t3)
+            axpby(1.0,self.t3,1.0,sol)
 
 

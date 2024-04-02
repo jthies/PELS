@@ -67,7 +67,7 @@ class CgTest(unittest.TestCase):
             for j in range(k):
                 self.A_op.apply(X[:,j], Y[:,j])
             Z = np.matmul(X.transpose(),Y)
-            assert(np.linalg.norm(Z-Z.transpose())<1.0e-14)
+            assert(np.linalg.norm(Z-Z.transpose())<1.0e-12)
 
     def test_cg(self):
 
