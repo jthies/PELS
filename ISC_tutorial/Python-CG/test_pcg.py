@@ -46,8 +46,8 @@ class CgTest(unittest.TestCase):
             n = self.A.shape[0]
             x_host = np.random.rand(n)
             y_host = x_host.copy()
-            x = to_device(x_host)
-            y = to_device(y_host)
+            x = to_device(x_host.copy())
+            y = to_device(y_host.copy())
 
             self.A_op.apply(x, y)
 
