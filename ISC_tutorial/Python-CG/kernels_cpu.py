@@ -8,13 +8,17 @@ benchmarks_node = {'load': 480, 'store': 348, 'copy': 384, 'triad': 388}
 
 def memory_benchmarks():
     nthreads = get_num_threads()
+    nnuma    = (nthreads+15)//16
     if nthreads == 16:
         return benchmarks_numa
-    elif nthreads == 64:
+    elif nnuma==4:
         return benchmarks_node
     else:
         print('Warning: Memory benchmarks only available for 16 or 64 cores of DelftBlue Phase 2 nodes.')
-        return benchmarks_node
+        result = benchmarks_numa.copy()
+        for k in result.keys():
+            result[k] *=nnuma
+        return result
 
 
 @jit(nopython=True, parallel=True)
@@ -102,4 +106,9 @@ def dot(x,y):
     for i in prange(x.size):
         s += x[i]*y[i]
     return s
+
+@jit(nopython=True)
+def multiple_axpbys(a, x, b, y, ntimes):
+    for it in range(ntimes):
+        axpby(a,x,b,y)
 

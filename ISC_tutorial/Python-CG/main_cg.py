@@ -106,14 +106,21 @@ if __name__ == '__main__':
 
     A_prec = A
     b_prec = b
+
+    # we want to make sure what we measure during CG in total
+    # is consistent with the sum of the kernel calls and their
+    # runtime as predicted by the roofline model, so reset all
+    # counters and timers:
+    reset_counters()
+
+    t0 = perf_counter()
+
     if args.poly_k>0:
         A_prec = poly_op(A, args.poly_k)
         b_prec = copy(b)
         A_prec.prec_rhs(b, b_prec)
 
-    t0 = perf_counter()
     x_prec, relres, iter = cg_solve(A_prec,b_prec,x0,tol,maxit)
-    t1 = perf_counter()
 
     if args.poly_k>0:
         x = clone(x_prec)
@@ -121,6 +128,7 @@ if __name__ == '__main__':
     else:
         x = x_prec
 
+    t1 = perf_counter()
     t_CG = t1-t0
 
     x = to_host(x)

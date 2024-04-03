@@ -54,8 +54,11 @@ def compile_all():
         z = clone(x)
         s=dot(x,y)
         axpby(a,x,b,y)
+        multiple_axpbys(a,x,b,y,1)
         spmv(A1,x,y)
         spmv(A2,x,y)
+        diag_spmv(A1,x,y)
+    reset_counters()
 
 def memory_benchmarks(type):
     if type=='cpu':
@@ -64,6 +67,24 @@ def memory_benchmarks(type):
         return gpu.memory_benchmarks()
     else:
         raise('type should be "cpu" or "gpu"')
+
+def latency_benchmark(n, type):
+    ntimes = 100
+    x = np.random.rand(n)
+    y = np.random.rand(n)
+    a = 1.0
+    b = 0.0
+    if type=='cpu':
+           t0 = perf_counter()
+           cpu.multiple_axpbys(a,x,b,y,ntimes)
+           t1 = perf_counter()
+           for i in range(ntimes):
+               cpu.axpby(a,x,b,y)
+           t2 = perf_counter()
+    elif type=='gpu':
+        raise('latency_benchmark not implemented for GPU/cuda')
+    L = ((t2-t1)/(t1-t0))/ntimes
+    return L
 
 # total number of calls
 # note: we do not measure the first call because that will involve compilation time
@@ -80,6 +101,14 @@ flop = {'spmv': 0.0, 'axpby': 0.0, 'dot': 0.0, 'init':0.0}
 # which benchmark to use for predicting memory bandwidth achievable by an operation.
 # Benchmark values are currently hard-coded into kernels_cpu.py and kernels_gpu.py for Sapphire Rapids and A100, resp.
 bench_map = {'spmv': 'triad', 'axpby': 'triad', 'dot': 'load', 'init': 'store'}
+
+def reset_counters():
+    for k in calls.keys():
+        calls[k] = 0.0
+        time[k] = 0.0
+        load[k] = 0.0
+        store[k] = 0.0
+        flop[k] = 0.0
 
 def to_device(A):
     if available_gpus()>0:
@@ -214,9 +243,18 @@ def dot(x,y):
 
 def perf_report(type):
     bench = memory_benchmarks(type)
+    lat = latency_benchmark(10000, type)
 
+    # total measured time
     t_tot  = 0
+    # model prediction (excluding latency)
     t_mod  = 0
+    # prediction of latency-induced overhead
+    # (assuming that every function call from Python costs a fixed overhead
+    # as returned by latency_benchmark())
+    t_lat = 0
+    # total number of functions called
+    total_calls = 0
 
     print('kernel\tcalls\tbw_meas\tbw_expected\tt_meas/call\tt_expected/call\n')
     for kern in ('dot', 'axpby', 'spmv'):
@@ -225,8 +263,13 @@ def perf_report(type):
                 (kern, calls[kern], (load[kern]+store[kern])*1e-9/time[kern], bench[bench_map[kern]],
                 time[kern]/calls[kern], (load[kern]+store[kern])*1e-9/bench[bench_map[kern]]/calls[kern]))
             t_tot += time[kern]
+            t_lat += calls[kern]*lat
             t_mod += (load[kern]+store[kern])*1e-9/bench[bench_map[kern]]
-    print('Total\t \t \t \t \t %g \t %g'%(t_tot, t_mod))
+            total_calls += calls[kern]
+
+    print('Latency\t%d \t \t \t \t \t %g s'%(total_calls, t_lat/total_calls))
+    print('Total\t \t \t \t \t \t %g s \t %g s'%(t_tot, t_mod))
+    print('Total including latency:\t \t \t \t \t %g s'%(t_mod+t_lat))
 
 def perf_report_plot(type, filename=None):
     from matplotlib import pyplot as plt
