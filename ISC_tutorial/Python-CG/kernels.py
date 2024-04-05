@@ -193,7 +193,9 @@ def copy(X):
     on the CPU.
     '''
     if cuda and is_cuda_array(X):
-        return v.copy()
+        Y = cuda.device_array_like(X)
+        Y[:] = X[:]
+        return Y
     elif type(X) == np.ndarray:
         return cpu.copy_vector(X)
     elif type(X) == scipy.sparse.csr_matrix or type(X) == sellcs.sellcs_matrix:

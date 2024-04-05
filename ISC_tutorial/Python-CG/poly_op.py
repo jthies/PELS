@@ -52,6 +52,10 @@ class poly_op:
         self.t2 = to_device(self.t2)
         self.t3 = to_device(self.t3)
 
+        init(self.t1,0.0)
+        init(self.t2,0.0)
+        init(self.t3,0.0)
+
     def prec_rhs(self, b, prec_b):
         '''
         Given the right-hand side b of a linear system
