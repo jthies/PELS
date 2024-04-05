@@ -56,10 +56,29 @@ class VectorKernelsTest(unittest.TestCase):
         assert(abs(s-sum(self.y_host))<np.sqrt(self.eps))
 
 
-@parameterized(('N'),[30, 128, 129, 150, 1280, 2**20, 2**20+127])
-def test_dot_ones():
+@pytest.mark.parametrize('N',[30, 128, 129, 150, 1280, 2**20, 2**20+127])
+def test_dot_ones(N):
     xh = np.ones(N, dtype='float64')
     yh = np.ones(N, dtype='float64')
+    x = to_device(xh)
+    y = to_device(yh)
+    my_dot = dot(x, y)
+    assert(abs(my_dot - N)<N*1e-12)
+
+@pytest.mark.parametrize('N',[30, 128, 129, 150, 1280, 2**20, 2**20+127])
+def test_dot_arange(N):
+    xh = np.arange(1,N+1, dtype='float64')
+    yh = 1.0/xh
+    x = to_device(xh)
+    y = to_device(yh)
+    my_dot = dot(x, y)
+    assert(abs(my_dot - N)<N*1e-12)
+
+@pytest.mark.parametrize('N',[30, 128, 129, 150, 1280, 2**20, 2**20+127])
+def test_dot_rand(N):
+    np.random.seed(123456)
+    xh = np.random.rand(N)
+    yh = 1.0/xh
     x = to_device(xh)
     y = to_device(yh)
     my_dot = dot(x, y)
