@@ -1,6 +1,6 @@
 import unittest
 import pytest
-from parameterized import parameterized_class
+from parameterized import parameterized_class, parameterized
 
 import os
 import numpy as np
@@ -56,16 +56,14 @@ class VectorKernelsTest(unittest.TestCase):
         assert(abs(s-sum(self.y_host))<np.sqrt(self.eps))
 
 
-def test_bigdot():
-    N = 10**7
-    np.random.seed(123455678)
-    xh = np.random.rand(N)
-    yh = np.random.rand(N)
+@parameterized(('N'),[30, 128, 129, 150, 1280, 2**20, 2**20+127])
+def test_dot_ones():
+    xh = np.ones(N, dtype='float64')
+    yh = np.ones(N, dtype='float64')
     x = to_device(xh)
     y = to_device(yh)
-    dot_ref = np.dot(xh,yh)
     my_dot = dot(x, y)
-    assert(abs(dot_ref-my_dot)<1e-7)
+    assert(abs(my_dot - N)<N*1e-12)
 
 @parameterized_class(('Matrix'),[
     ['Ddiag13'],

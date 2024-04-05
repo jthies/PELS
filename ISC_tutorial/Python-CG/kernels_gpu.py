@@ -17,6 +17,10 @@ def to_device(A):
         A.cu_indptr = cuda.to_device(A.indptr)
         A.cu_indices = cuda.to_device(A.indices)
         return A
+    elif type(A) == scipy.sparse.dia.dia_matrix:
+        A.cu_data = cuda.to_device(A.data)
+        A.cu_offsets = cuda.to_device(A.offsets)
+        return A
     else:
         return cuda.to_device(A)
 

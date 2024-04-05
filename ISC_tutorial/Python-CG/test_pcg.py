@@ -64,6 +64,8 @@ class CgTest(unittest.TestCase):
             k=30
             X = np.random.rand(n,k)
             Y = X.copy()
+            X = to_device(X)
+            Y = to_device(Y)
             for j in range(k):
                 self.A_op.apply(X[:,j], Y[:,j])
             Z = np.matmul(X.transpose(),Y)

@@ -44,6 +44,7 @@ class poly_op:
         self.t3 = np.empty(self.shape[0], dtype=self.dtype)
 
         # in case A has CUDA arrays, also copy over our compnents:
+        self.isqD = to_device(self.isqD)
         self.A1 = to_device(self.A1)
         self.L = to_device(self.L)
         self.U = to_device(self.U)
