@@ -53,8 +53,7 @@ def cu_init(x, val):
         x[i] = val
 
 
-# TROET
-@jit(nopython=True, parallel=True)
+@cuda.jit((float64[:],float64[:],float64[:]))
 def cu_vscale(v, x, y):
     '''
     Vector scaling y[i] = v[i]*x[i]
