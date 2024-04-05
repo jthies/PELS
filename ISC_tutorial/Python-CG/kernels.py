@@ -39,6 +39,7 @@ def compile_all():
     z = clone(x)
     s=dot(x,y)
     axpby(a,x,b,y)
+    cpu.multiple_axpbys(a,x,b,y,1)
     spmv(A1,x,y)
     spmv(A2,x,y)
     # compile GPU kernels:
@@ -54,7 +55,7 @@ def compile_all():
         z = clone(x)
         s=dot(x,y)
         axpby(a,x,b,y)
-        multiple_axpbys(a,x,b,y,1)
+        gpu.multiple_axpbys(a,x,b,y,1)
         spmv(A1,x,y)
         spmv(A2,x,y)
         diag_spmv(A1,x,y)
@@ -75,14 +76,22 @@ def latency_benchmark(n, type):
     a = 1.0
     b = 0.0
     if type=='cpu':
-           t0 = perf_counter()
-           cpu.multiple_axpbys(a,x,b,y,ntimes)
-           t1 = perf_counter()
-           for i in range(ntimes):
-               cpu.axpby(a,x,b,y)
-           t2 = perf_counter()
+        t0 = perf_counter()
+        cpu.multiple_axpbys(a,x,b,y,ntimes)
+        t1 = perf_counter()
+        for i in range(ntimes):
+            cpu.axpby(a,x,b,y)
+        t2 = perf_counter()
     elif type=='gpu':
-        raise('latency_benchmark not implemented for GPU/cuda')
+        x = gpu.to_device(x)
+        y = gpu.to_device(y)
+        t0 = perf_counter()
+        gpu.multiple_axpbys(a,x,b,y,ntimes)
+        t1 = perf_counter()
+        for i in range(ntimes):
+            gpu.axpby(a,x,b,y)
+        t2 = perf_counter()
+
     L = ((t2-t1)/(t1-t0))/ntimes
     return L
 
