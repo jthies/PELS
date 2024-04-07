@@ -6,8 +6,14 @@ import numba
 import sellcs
 
 import kernels_cpu as cpu
+
+from spmv_kernels_c import csr_spmv
+
 # for benchmarking numpy/scipy implementations
 #import kernels_numpy as cpu
+
+spmv_numba=True
+#spmv_numba=False
 
 try:
     from numba import cuda
@@ -42,6 +48,7 @@ def compile_all():
     cpu.multiple_axpbys(a,x,b,y,1)
     spmv(A1,x,y)
     spmv(A2,x,y)
+    csr_spmv(A1,x,y)
     # compile GPU kernels:
     if available_gpus()>0:
         x = to_device(x)
@@ -157,7 +164,10 @@ def spmv(A, x, y):
         indptr = A.indptr
         indices = A.indices
     if type(A)==scipy.sparse.csr_matrix:
+        if spmv_numba==True:
             run_on.csr_spmv(data, indptr, indices, x, y)
+        else:
+            csr_spmv(A,x,y)
     elif type(A)==sellcs.sellcs_matrix:
         run_on.sell_spmv(data, indptr, indices, A.C, x, y)
     else:
