@@ -79,7 +79,7 @@ if __name__ == '__main__':
     if args.fmt=='SELL':
         C=args.C
         sigma=args.sigma
-        A = sellcs_matrix(A, C, sigma)
+        A = sellcs_matrix(A_csr=A, C=C, sigma=sigma)
         b = b[A.permute]
 
     if available_gpus()>0:
@@ -116,6 +116,8 @@ if __name__ == '__main__':
     t0 = perf_counter()
 
     if args.poly_k>0:
+        if args.fmt == 'SELL':
+            raise('polynomial preconditioner not implemented for SELL-C-sigma format: Either use -fmt CSR or -poly_k 0.')
         A_prec = poly_op(A, args.poly_k)
         b_prec = copy(b)
         A_prec.prec_rhs(b, b_prec)

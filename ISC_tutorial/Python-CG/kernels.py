@@ -212,8 +212,10 @@ def copy(X):
         data, indices, indptr = cpu.copy_csr_arrays(X.data, X.indptr, X.indices)
         if type(X) == scipy.sparse.csr_matrix:
             A = scipy.sparse.csr_matrix((data, indices, indptr), shape=X.shape)
-        elif type(A) == sellcs.sellcs_matrix:
-            A = sellcs.sellcs_matrix((data, indices, indptr), shape=X.shape, C=X.C, sigma=X.sigma)
+        elif type(X) == sellcs.sellcs_matrix:
+            permute = cpu.copy_vector(X.permute)
+            unpermute = cpu.copy_vector(X.unpermute)
+            A = sellcs.sellcs_matrix(A_arrays=(data, indices, indptr, permute, unpermute,X.nnz), shape=X.shape, C=X.C, sigma=X.sigma)
         if hasattr(X, 'cu_data'):
             A.cu_data = X.cu_data.copy()
         if hasattr(X, 'cu_indices'):

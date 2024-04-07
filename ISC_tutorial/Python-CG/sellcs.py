@@ -1,17 +1,41 @@
+from numba import jit, prange
 import numpy as np
 from scipy.sparse import csr_matrix
 
 class sellcs_matrix:
 
-    def __init__(self, A_csr, C=32, sigma=1):
+    def __init__(self, A_csr=None, A_arrays=None, C=32, sigma=1, shape=None, dtype=None):
+        '''
+        The sellcss_matrix is a simple object without any methods or operators. To perform a
+        sparse matrix-vector multiplication, use kernels.spmv(A, x, y) instead of y=A*x.
+        There are two ways to construct this matrix class:
 
+        1. from a scipy.sparse.csr_matrix: A = sellcs_matrix(A_csr, C, sigma)
+        2. from existing SELL-C-sigma arrays: A = sellcs_matrix((data,indices,indptr, permute, unpermute, nnz), C, shape)
+        '''
+        if (A_csr is None and A_arrays is None) or (A_csr!=None and A_arrays!=None):
+            raise ValueError('Invalid input to sellcs_matrix: need either A_csr or (data, indices, indptr)')
         if C<1 or sigma<0 or (sigma!=1 and sigma%C!=0):
             raise ValueError('Invalid parameters C and/or sigma: sigma should be 1 or a multiple of C.')
 
-        self.shape = A_csr.shape
-        self.dtype = A_csr.dtype
         self.C = C
         self.sigma = sigma
+
+        if A_csr != None:
+            self.from_csr(A_csr)
+        elif A_arrays != None:
+            self.data, self.indices, self.indptr, self.permute, self.unpermute, self.nnz = A_arrays
+            self.nchunks = self.indptr.size-1
+            self.shape = shape
+            self.dtype = self.data.dtype
+
+    def from_csr(self, A_csr):
+
+        self.shape = A_csr.shape
+        self.dtype = A_csr.dtype
+
+        C = self.C
+        sigma = self.sigma
 
         nrows = self.shape[0]
         nchunks = (nrows+C-1)//C

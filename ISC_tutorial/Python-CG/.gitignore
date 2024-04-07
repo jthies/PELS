@@ -1,3 +1,5 @@
 __pycache__/
 *~
-vector_ops.so
+*.so
+*.s
+*.out
