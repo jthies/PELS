@@ -93,7 +93,7 @@ class SparseMatKernelsTest(unittest.TestCase):
     def setUp(self):
         self.A=scipy.sparse.csr_matrix(scipy.io.mmread(self.Matrix+'.mm'))
         self.n=self.A.shape[0]
-        self.x_host=np.arange(self.n)+1
+        self.x_host=np.arange(self.n, dtype='float64')+1
         self.yref=self.A*self.x_host
         self.y_host=np.empty_like(self.yref)
 

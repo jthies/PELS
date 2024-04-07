@@ -62,13 +62,16 @@ class CgTest(unittest.TestCase):
         if self.A_op != None:
             n = self.A.shape[0]
             k=30
-            X = np.random.rand(n,k)
+            # note: numpy arrays are col-major,
+            # and our spmv's only work on single, contiguous vectors.
+            # So we store a k x n matrix and take its rows as vectors.
+            X = np.random.rand(k,n)
             Y = X.copy()
             X = to_device(X)
             Y = to_device(Y)
             for j in range(k):
-                self.A_op.apply(X[:,j], Y[:,j])
-            Z = np.matmul(X.transpose(),Y)
+                self.A_op.apply(X[j,:], Y[j,:])
+            Z = np.matmul(X,Y.transpose())
             assert(np.linalg.norm(Z-Z.transpose())<1.0e-12)
 
     def test_cg(self):
