@@ -9,6 +9,7 @@ class sellcs_matrix:
             raise ValueError('Invalid parameters C and/or sigma: sigma should be 1 or a multiple of C.')
 
         self.shape = A_csr.shape
+        self.dtype = A_csr.dtype
         self.C = C
         self.sigma = sigma
 
