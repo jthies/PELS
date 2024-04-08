@@ -17,7 +17,7 @@ from matrix_generator import create_matrix
 import argparse
 
 # some stuff is missing here up to now:
-from kernels_cpu import copy_vector, copy_csr_arrays, multiple_axpbys, memory_benchmarks, sell_spmv
+from kernels_cpu import copy_vector, copy_csr_arrays, multiple_axpbys, memory_benchmarks, sell_spmv, vscale
 
 # compile the C code into a shared library
 os.system("make -j")
@@ -35,6 +35,7 @@ c_int_p = POINTER(c_int)
 c_functions.csr_spmv.argtypes = [c_size_t, c_double_p, c_int_p, c_int_p, c_double_p, c_double_p]
 c_functions.axpby.argtypes = [c_size_t, c_double, c_double_p, c_double, c_double_p]
 c_functions.dot.argtypes = [c_size_t, c_double_p, c_double_p]
+c_functions.dot.restype = c_double
 c_functions.init.argtypes = [c_size_t, c_double_p, c_double]
 
 
