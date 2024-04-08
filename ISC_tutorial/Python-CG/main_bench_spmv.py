@@ -1,4 +1,6 @@
 from kernels import *
+from kernels_cpu import csr_spmv as csr_spmv_numba
+from kernels_c import csr_spmv as csr_spmv_c
 from matrix_generator import create_matrix
 import argparse
 from timeit import timeit
@@ -28,27 +30,22 @@ if args.matgen != 'None':
 
     # copile the two spmv variants:
     spmv(A,x,y)
-    spmv_c(A,x,y)
+    csr_spmv_numba(A.data,A.indptr,A.indices,x,y)
+    csr_spmv_c(A.data,A.indptr,A.indices,x,y)
 
     print('Numba csr_spmv, matrix='+args.matgen)
-    reset_counters()
-    t_tot = timeit('spmv(A,x,y)', globals=globals(), number=args.k)
-    perf_report('cpu')
+    t_tot = timeit('csr_spmv_numba(A.data,A.indptr,A.indices,x,y)', globals=globals(), number=args.k)
     print('Total time for %d SpMVs: %e seconds.'%(args.k, t_tot))
 
     print('C csr_spmv, matrix='+args.matgen)
-    reset_counters()
-    t_tot = timeit('spmv_c(A,x,y)', globals=globals(), number=args.k)
-    perf_report('cpu')
+    t_tot = timeit('csr_spmv_c(A.data,A.indptr,A.indices,x,y)', globals=globals(), number=args.k)
     print('Total time for %d SpMVs: %e seconds.'%(args.k, t_tot))
 
     print('')
-    print('Run our own loop...')
-    reset_counters()
+    print('Run our own loop, C csr_spmv')
     t0 = perf_counter()
     for i in range(args.k):
-        spmv(A,x,y)
+        csr_spmv_c(A.data,A.indptr,A.indices,x,y)
     t1 = perf_counter()
     t_tot = t1-t0
-    perf_report('cpu')
     print('Total time for %d SpMVs: %e seconds.'%(args.k, t_tot))
