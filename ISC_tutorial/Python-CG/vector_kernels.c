@@ -14,12 +14,21 @@
 // Basic C implemenattions of axpy and dot using OpenMP.
 
 // Operation that loads two and writes one vector (z=a*x+y).
-void axpy(size_t N, double a, const double *restrict X, const double *restrict Y, double *restrict Z)
+void axpby(size_t N, double a, const double *restrict X, double b, double *restrict Y)
 {
 #pragma omp parallel for schedule(static)
   for (size_t i = 0; i < N; i++)
   {
-    Z[i]=a*X[i]+Y[i];
+    Y[i]=a*X[i]+b*Y[i];
+  }
+}
+
+void init(size_t N, double *restrict X, double val)
+{
+#pragma omp parallel for schedule(static)
+  for (size_t i = 0; i < N; i++)
+  {
+    X[i]=val;
   }
 }
 
@@ -31,11 +40,3 @@ double dot(size_t N, const double* X, const double* Y)
   return dot;
 }
 
-void foo(size_t N, double a, const double *restrict X, const double *restrict Y, double *restrict Z)
-{
-#pragma omp parallel for schedule(static)
-  for (size_t i = 0; i < N; i++)
-  {
-    Z[i] = log(atan(a*X[i]+Y[i]))/log(sqrt(X[i]*X[i] + Y[i]*Y[i]));
-  }
-}

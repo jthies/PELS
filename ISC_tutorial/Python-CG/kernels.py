@@ -5,15 +5,11 @@ import numba
 
 import sellcs
 
-import kernels_cpu as cpu
-
-from spmv_kernels_c import csr_spmv
+#import kernels_cpu as cpu
+import kernels_c as cpu
 
 # for benchmarking numpy/scipy implementations
 #import kernels_numpy as cpu
-
-spmv_numba=True
-#spmv_numba=False
 
 try:
     from numba import cuda
@@ -48,7 +44,6 @@ def compile_all():
     cpu.multiple_axpbys(a,x,b,y,1)
     spmv(A1,x,y)
     spmv(A2,x,y)
-    csr_spmv(A1,x,y)
     # compile GPU kernels:
     if available_gpus()>0:
         x = to_device(x)
@@ -164,14 +159,28 @@ def spmv(A, x, y):
         indptr = A.indptr
         indices = A.indices
     if type(A)==scipy.sparse.csr_matrix:
-        if spmv_numba==True:
-            run_on.csr_spmv(data, indptr, indices, x, y)
-        else:
-            csr_spmv(A,x,y)
+        run_on.csr_spmv(data, indptr, indices, x, y)
     elif type(A)==sellcs.sellcs_matrix:
         run_on.sell_spmv(data, indptr, indices, A.C, x, y)
     else:
         raise TypeError('spmv wrapper only implemented for scipy.sparse.csr_matrix or sellcs.sellcs_matrix')
+    t1 = perf_counter()
+    time['spmv']  += t1-t0
+    calls['spmv'] += 1
+    if calls['spmv']>0:
+        load['spmv']  += 12*A.nnz+8*(A.shape[0]+A.shape[1])
+        store['spmv'] += 8*A.shape[0]
+        flop['spmv'] += 2*A.nnz
+
+def spmv_c(A, x, y):
+    t0 = perf_counter()
+    data = A.data
+    indptr = A.indptr
+    indices = A.indices
+    if type(A)==scipy.sparse.csr_matrix:
+        csr_spmv_c(A,x,y)
+    else:
+        raise TypeError('spmv C wrapper only implemented for scipy.sparse.csr_matrix')
     t1 = perf_counter()
     time['spmv']  += t1-t0
     calls['spmv'] += 1
