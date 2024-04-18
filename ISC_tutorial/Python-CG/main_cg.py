@@ -12,6 +12,8 @@ from matrix_generator import create_matrix
 import numba
 import argparse
 
+import gc
+
 def get_argparser():
     parser = argparse.ArgumentParser(description='Run a CG benchmark.')
     parser.add_argument('-matfile', type=str, default='None',
@@ -36,6 +38,8 @@ def get_argparser():
                     help='Random seed to make runs reproducible')
     parser.add_argument('-poly_k', type=int, default=0,
                     help='Use a degree-k polynomial preconditioner based on the Neumann series.')
+    parser.add_argument('-printerr', action=argparse.BooleanOptionalAction,
+                    help='Besides the residual norm, also compute and print the error norm.')
     return parser
 
 if __name__ == '__main__':
@@ -113,6 +117,7 @@ if __name__ == '__main__':
     # counters and timers:
     reset_counters()
 
+    gc.disable()
     t0 = perf_counter()
 
     if args.poly_k>0:
@@ -122,7 +127,11 @@ if __name__ == '__main__':
         b_prec = copy(b)
         A_prec.prec_rhs(b, b_prec)
 
-    x_prec, relres, iter = cg_solve(A_prec,b_prec,x0,tol,maxit)
+    x_ex_in = None
+    if args.printerr:
+        x_ex_in = x_ex
+
+    x_prec, relres, iter = cg_solve(A_prec,b_prec,x0,tol,maxit, x_ex=x_ex_in)
 
     if args.poly_k>0:
         x = clone(x_prec)
@@ -132,6 +141,7 @@ if __name__ == '__main__':
 
     t1 = perf_counter()
     t_CG = t1-t0
+    gc.enable()
 
     x = to_host(x)
 

@@ -1,7 +1,7 @@
 import numpy as np
 from kernels import *
 
-def cg_solve(A, b, x0, tol, maxit, verbose=True):
+def cg_solve(A, b, x0, tol, maxit, verbose=True, x_ex=None):
     '''
     x, tol, iter = cg_solve(A, b, x0, tol, maxit)
     Where A is an spd scipy.sparse.csr_matrix, b and x0 are numpy.array's of size A.shpae[0],
@@ -11,6 +11,10 @@ def cg_solve(A, b, x0, tol, maxit, verbose=True):
     r = clone(b)
     p = clone(b)
     q = clone(b)
+
+    if x_ex is not None:
+        print('PerfWarning: providing the exact solution x_ex results in additional operations to calculate and print the error norm.')
+        err = clone(b)
 
     tol2 = tol*tol
 
@@ -58,7 +62,16 @@ def cg_solve(A, b, x0, tol, maxit, verbose=True):
         rho = dot(r, r)
 
         if verbose:
-            print('%d\t%e'%(iter, np.sqrt(rho)))
+            if x_ex is not None:
+                if hasattr(A, 'unprec_sol'):
+                    A.unprec_sol(x, err)
+                else:
+                    axpby(1.0, x, 0.0, err)
+                axpby(-1.0, x_ex, 1.0, err)
+                err_norm = np.sqrt(dot(err, err))
+                print('%d\t%e\t%e'%(iter, np.sqrt(rho), err_norm))
+            else:
+                print('%d\t%e'%(iter, np.sqrt(rho)))
 
         beta = rho / rho_old
         # p = r+beta*p
