@@ -85,6 +85,9 @@ if __name__ == '__main__':
         sigma=args.sigma
         A = sellcs_matrix(A_csr=A, C=C, sigma=sigma)
         b = b[A.permute]
+        print('Matrix format: SELL-%d-%d'%(C,sigma))
+    else:
+        print('Matrix format: CSR')
 
     if available_gpus()>0:
         type = 'gpu'
