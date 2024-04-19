@@ -1,3 +1,13 @@
+#/*******************************************************************************************/
+#/* This file is part of the training material available at                                 */
+#/* https://github.com/jthies/PELS                                                          */
+#/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+#/* included in this software.                                                              */
+#/*                                                                                         */
+#/* Contact: Jonas Thies (j.thies@tudelft.nl)                                               */
+#/*                                                                                         */
+#/*******************************************************************************************/
+
 from kernels import *
 from kernels_cpu import csr_spmv as csr_spmv_numba
 from kernels_c import csr_spmv as csr_spmv_c

@@ -1,12 +1,13 @@
 #/*******************************************************************************************/
-#/* This file is part of the DHPC training material available at                            */
-#/* https://gitlab.tudelft.nl/dhpc/training                                                 */
+#/* This file is part of the training material available at                                 */
+#/* https://github.com/jthies/PELS                                                          */
 #/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
 #/* included in this software.                                                              */
 #/*                                                                                         */
 #/* Contact: Jonas Thies (j.thies@tudelft.nl)                                               */
 #/*                                                                                         */
 #/*******************************************************************************************/
+
 import numpy as np
 from ctypes import *
 from numpy.ctypeslib import as_ctypes

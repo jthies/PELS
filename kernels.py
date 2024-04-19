@@ -1,3 +1,13 @@
+#/*******************************************************************************************/
+#/* This file is part of the training material available at                                 */
+#/* https://github.com/jthies/PELS                                                          */
+#/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+#/* included in this software.                                                              */
+#/*                                                                                         */
+#/* Contact: Jonas Thies (j.thies@tudelft.nl)                                               */
+#/*                                                                                         */
+#/*******************************************************************************************/
+
 from time import perf_counter
 import numpy as np
 import scipy
