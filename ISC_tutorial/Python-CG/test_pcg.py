@@ -1,13 +1,22 @@
 import unittest
 import pytest
 from parameterized import parameterized_class
-from test_kernels import diff_norm
 
 import numpy as np
 from kernels import *
 from poly_op import *
 from pcg import *
 from matrix_generator import create_matrix
+
+def diff_norm(x, y):
+    '''
+    Computes ||x - y||_2 where x and y may live either on the host 9numpy arrays)
+    or device (cuda arrays)
+    '''
+    xh = to_host(x)
+    yh = to_host(y)
+    return np.linalg.norm(xh-yh)
+
 
 @parameterized_class(('Matrix', 'maxit', 'poly_k'),[
     ['Laplace10x10', 30, -1],
