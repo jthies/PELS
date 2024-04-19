@@ -140,13 +140,17 @@ def cu_sell_spmv(valA, cptrA, colA, C, x, y):
     nchunks = len(cptrA)-1
     nrows = x.size
 
+#    y_shared = cuda.shared.array(shape=(cuda.blockDim.x), dtype=float64) # array with one element per thread in the block
+    y_shared = cuda.shared.array(shape=(128), dtype=float64) # array with one element per thread in the block
+
     if row>=nrows:
         return
     c = min(C,nrows-chunk*C)
     w    = (cptrA[chunk+1]-offs)//c
-    y[row] = 0
+    y_shared[tx] = 0
     for j in range(w):
-        y[row] += valA[offs+j*c+tx] * x[colA[offs+j*c+tx]]
+        y_shared[tx] += valA[offs+j*c+tx] * x[colA[offs+j*c+tx]]
+    y[row] = y_shared[tx]
 
 
 @cuda.jit
