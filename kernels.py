@@ -55,7 +55,6 @@ def compile_all():
     z = clone(x)
     s=dot(x,y)
     axpby(a,x,b,y)
-    cpu.multiple_axpbys(a,x,b,y,1)
     spmv(A1,x,y)
     spmv(A2,x,y)
     # compile GPU kernels:
@@ -85,35 +84,8 @@ def memory_benchmarks(type):
     else:
         raise('type should be "cpu" or "gpu"')
 
-def latency_benchmark(n, type):
-    ntimes = 100
-    x = np.random.rand(n)
-    y = np.random.rand(n)
-    a = 1.0
-    b = 0.0
-    if type=='cpu':
-        t0 = perf_counter()
-        cpu.multiple_axpbys(a,x,b,y,ntimes)
-        t1 = perf_counter()
-        for i in range(ntimes):
-            cpu.axpby(a,x,b,y)
-        t2 = perf_counter()
-    elif type=='gpu':
-        x = gpu.to_device(x)
-        y = gpu.to_device(y)
-        t0 = perf_counter()
-        gpu.multiple_axpbys(a,x,b,y,ntimes)
-        t1 = perf_counter()
-        for i in range(ntimes):
-            gpu.axpby(a,x,b,y)
-        t2 = perf_counter()
-
-    L = ((t2-t1)/(t1-t0))/ntimes
-    return L
-
 # total number of calls
-# note: we do not measure the first call because that will involve compilation time
-calls = {'spmv': -1, 'axpby': -1, 'dot': -1, 'init':-1}
+calls = {'spmv': 0, 'axpby': 0, 'dot': 0, 'init': 0}
 # total elapsed time in seconds
 time = {'spmv': 0.0, 'axpby': 0.0, 'dot': 0.0, 'init':0.0}
 # total loaded data in GB
@@ -181,12 +153,16 @@ def spmv(A, x, y):
     t1 = perf_counter()
     time['spmv']  += t1-t0
     calls['spmv'] += 1
-    if calls['spmv']>0:
-        load['spmv']  += 12*A.nnz+8*(A.shape[0]+A.shape[1])
-        store['spmv'] += 8*A.shape[0]
-        flop['spmv'] += 2*A.nnz
+    load['spmv']  += 12*A.nnz+8*(A.shape[0]+A.shape[1])
+    store['spmv'] += 8*A.shape[0]
+    flop['spmv'] += 2*A.nnz
 
 def spmv_c(A, x, y):
+    '''
+    This function explicitly calls the C variant of the CSR spmv.
+    It is meant only for testing and benchmarking, if you want to use
+    the C kernels, import kernels_c as cpu at the beginning of this module.
+    '''
     t0 = perf_counter()
     data = A.data
     indptr = A.indptr
@@ -255,9 +231,8 @@ def init(v, val):
         cpu.init(v,val)
     t1 = perf_counter()
     calls['init'] += 1
-    if calls['init']>0:
-        time['init']  += t1-t0
-        store['init'] += 8*v.size
+    time['init']  += t1-t0
+    store['init'] += 8*v.size
 
 def axpby(a,x,b,y):
     t0 = perf_counter()
@@ -268,8 +243,6 @@ def axpby(a,x,b,y):
     t1 = perf_counter()
     time['axpby']  += t1-t0
     calls['axpby'] += 1
-    if calls['axpby']==0:
-        return
     load['axpby']  += 16*x.size
     store['axpby'] += 8*x.size
     flop['axpby'] += 2*x.size
@@ -289,16 +262,11 @@ def dot(x,y):
 
 def perf_report(type):
     bench = memory_benchmarks(type)
-    lat = latency_benchmark(10000, type)
 
     # total measured time
     t_tot  = 0
-    # model prediction (excluding latency)
+    # model prediction
     t_mod  = 0
-    # prediction of latency-induced overhead
-    # (assuming that every function call from Python costs a fixed overhead
-    # as returned by latency_benchmark())
-    t_lat = 0
     # total number of functions called
     total_calls = 0
 
@@ -309,13 +277,10 @@ def perf_report(type):
                 (kern, calls[kern], (load[kern]+store[kern])*1e-9/time[kern], bench[bench_map[kern]],
                 time[kern]/calls[kern], (load[kern]+store[kern])*1e-9/bench[bench_map[kern]]/calls[kern]))
             t_tot += time[kern]
-            t_lat += calls[kern]*lat
             t_mod += (load[kern]+store[kern])*1e-9/bench[bench_map[kern]]
             total_calls += calls[kern]
 
-    print('Latency\t%d \t \t \t \t \t %g s'%(total_calls, t_lat/total_calls))
     print('Total\t \t \t \t \t \t %g s \t %g s'%(t_tot, t_mod))
-    print('Total including latency:\t \t \t \t \t %g s'%(t_mod+t_lat))
 
 def perf_report_plot(type, filename=None):
     from matplotlib import pyplot as plt

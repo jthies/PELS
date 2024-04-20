@@ -18,7 +18,7 @@ from matrix_generator import create_matrix
 import argparse
 
 # some stuff is missing here up to now:
-from kernels_cpu import copy_vector, copy_csr_arrays, multiple_axpbys, memory_benchmarks, sell_spmv, vscale
+from kernels_cpu import copy_vector, copy_csr_arrays, memory_benchmarks, sell_spmv, vscale
 
 # compile the C code into a shared library
 os.system("make -j")

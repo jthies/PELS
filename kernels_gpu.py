@@ -162,18 +162,6 @@ def cu_sell_spmv(valA, cptrA, colA, C, x, y):
         y_shared[tx] += valA[offs+j*c+tx] * x[colA[offs+j*c+tx]]
     y[row] = y_shared[tx]
 
-
-@cuda.jit
-def cu_multiple_axpbys(a, x, b, y, ntimes):
-    tx = cuda.threadIdx.x
-    bx = cuda.blockIdx.x
-    bdx = cuda.blockDim.x
-    i = bx * bdx + tx
-    if i < x.size:
-        for it in range(ntimes):
-            y[i]=a*x[i]+b*y[i]
-
-
 ################################################################################
 # Wrapper functions to expose to the user.                                     #
 # Note that these will work both with regular (host-side) numpy arrays         #
@@ -224,9 +212,6 @@ def sell_spmv(valA,cptrA,colA, C, x, y):
         nchunks = len(cptrA)-1
         cu_sell_spmv[nchunks, C](valA, cptrA, colA, C, x, y)
         cuda.synchronize()
-
-def multiple_axpbys(a, x, b, y, ntimes):
-    cu_multiple_axpbys.forall(x.size)(a,x,b,y,ntimes)
 
 
 if __name__ == '__main__':

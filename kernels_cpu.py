@@ -117,8 +117,3 @@ def dot(x,y):
         s += x[i]*y[i]
     return s
 
-@jit(nopython=True)
-def multiple_axpbys(a, x, b, y, ntimes):
-    for it in range(ntimes):
-        axpby(a,x,b,y)
-
