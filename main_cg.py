@@ -90,10 +90,13 @@ if __name__ == '__main__':
 
     sigma=1
 
+    A_csr = A # we may need it for creating the preconditioner
+              # in case the user wants a SELL-C-sigma matrix.
+
     if args.fmt=='SELL':
         C=args.C
         sigma=args.sigma
-        A = sellcs_matrix(A_csr=A, C=C, sigma=sigma)
+        A = sellcs_matrix(A_csr=A_csr, C=C, sigma=sigma)
         b = b[A.permute]
         print('Matrix format: SELL-%d-%d'%(C,sigma))
     else:
@@ -134,9 +137,19 @@ if __name__ == '__main__':
     t0 = perf_counter()
 
     if args.poly_k>0:
+        # building preconditioners typically requires a certain format,
+        # in our case, the poly_op class uses scipy functions tril and triu,
+        # which are not implemented by the sellcs_matrix class.
+        A_prec = poly_op(A_csr, args.poly_k)
         if args.fmt == 'SELL':
-            raise('polynomial preconditioner not implemented for SELL-C-sigma format: Either use -fmt CSR or -poly_k 0.')
-        A_prec = poly_op(A, args.poly_k)
+            # note: If A was originally sorted by row-length (sigma>1), use the same 
+            # sorting for L and U to avoid intermittent permutation by setting sigma=1.
+            # There still seems to be some kind of bug, though, because the number of
+            # iterations will increase with poly_k>0 and sigma>1. Hence this warning.
+            if args.sigma>1:
+                print('Warning: due to a bug, combining SELL-C-sigma for sigma>1 and the polynomial preconditioner for poly_k>0 leads to an increse in iterations.')
+            A_prec.L = to_device(sellcs_matrix(A_csr=A_prec.L, C=args.C, sigma=1))
+            A_prec.U = to_device(sellcs_matrix(A_csr=A_prec.U, C=args.C, sigma=1))
         b_prec = copy(b)
         A_prec.prec_rhs(b, b_prec)
 
