@@ -24,7 +24,6 @@ def memory_benchmarks():
     elif nnuma==4:
         return benchmarks_node
     else:
-        print('Warning: Memory benchmarks only available for 16 or 64 cores of DelftBlue Phase 2 nodes.')
         result = benchmarks_numa.copy()
         for k in result.keys():
             result[k] *=nnuma
