@@ -99,6 +99,7 @@ if __name__ == '__main__':
         A = sellcs_matrix(A_csr=A_csr, C=C, sigma=sigma)
         b = b[A.permute]
         print('Matrix format: SELL-%d-%d'%(C,sigma))
+        A_csr = A_csr[A.permute[:,None], A.permute]
     else:
         print('Matrix format: CSR')
 
@@ -146,8 +147,6 @@ if __name__ == '__main__':
             # sorting for L and U to avoid intermittent permutation by setting sigma=1.
             # There still seems to be some kind of bug, though, because the number of
             # iterations will increase with poly_k>0 and sigma>1. Hence this warning.
-            if args.sigma>1:
-                print('Warning: due to a bug, combining SELL-C-sigma for sigma>1 and the polynomial preconditioner for poly_k>0 leads to an increse in iterations.')
             A_prec.L = to_device(sellcs_matrix(A_csr=A_prec.L, C=args.C, sigma=1))
             A_prec.U = to_device(sellcs_matrix(A_csr=A_prec.U, C=args.C, sigma=1))
         b_prec = copy(b)
