@@ -62,7 +62,6 @@ def cg_solve(A, b, x0, tol, maxit, verbose=True, x_ex=None):
 
         pq = dot(p,q)
         alpha = rho / pq
-        #print('%16.12e = %16.12e / %16.12e'%(alpha, rho, pq))
         # x = x+alpha*p
         axpby(alpha, p, 1.0, x)
         # r = r - alpha*q
@@ -79,9 +78,9 @@ def cg_solve(A, b, x0, tol, maxit, verbose=True, x_ex=None):
                     axpby(1.0, x, 0.0, err)
                 axpby(-1.0, x_ex, 1.0, err)
                 err_norm = np.sqrt(dot(err, err))
-                print('%d\t%e\t%e'%(iter, np.sqrt(rho), err_norm))
+                print('%d\t%e\t%e'%(iter+1, np.sqrt(rho), err_norm))
             else:
-                print('%d\t%e'%(iter, np.sqrt(rho)))
+                print('%d\t%e'%(iter+1, np.sqrt(rho)))
 
         beta = rho / rho_old
         # p = r+beta*p
