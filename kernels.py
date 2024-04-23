@@ -70,7 +70,6 @@ def compile_all():
         z = clone(x)
         s=dot(x,y)
         axpby(a,x,b,y)
-        gpu.multiple_axpbys(a,x,b,y,1)
         spmv(A1,x,y)
         spmv(A2,x,y)
         diag_spmv(A1,x,y)
