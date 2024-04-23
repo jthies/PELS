@@ -88,6 +88,8 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
+    compile_all()
+
     if args.seed is not None:
         np.random.seed(args.seed)
 
@@ -121,6 +123,8 @@ if __name__=='__main__':
     else:
         type = 'cpu'
 
+
+    print('Will run on '+type)
 
     lmin = min_eig(A,v0,args.tol, args.maxit, verbose=True)
     print('Smallest eigenvalue computed: %e'%(lmin))
