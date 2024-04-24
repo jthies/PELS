@@ -196,7 +196,8 @@ def dot(x,y):
     # is almost certainly the case by default, but to be
     # sure, we enforce it here.
     ThreadsPerBlock = 128
-    BlocksPerGrid   = min(32, (x.size+ThreadsPerBlock-1)//ThreadsPerBlock)
+    BlocksPerGrid   =1024
+#    BlocksPerGrid   = min(32, (x.size+ThreadsPerBlock-1)//ThreadsPerBlock)
     s = cuda.device_array(shape=(1), dtype=np.float64)
     cu_dot[BlocksPerGrid,ThreadsPerBlock](x,y,s)
     return s.copy_to_host()[0]
