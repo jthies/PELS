@@ -37,9 +37,8 @@ class poly_op:
 
     '''
 
-    def __init__(self, A, k):
-
-        self.k = k
+    def __init__(self, A, args):
+        self.k = args.poly_k
         self.shape = A.shape
         self.dtype = A.dtype
         # store the inverse of the square-root of the diagonal
@@ -48,6 +47,21 @@ class poly_op:
         self.A1 = self.isqD*A*self.isqD
         self.L = -tril(self.A1,-1).tocsr()
         self.U = -triu(self.A1,1).tocsr()
+        self.mpkHandle = None
+        self.perm =None
+        #if we have RACE, use it
+        if args.use_RACE==1:
+            split=True
+            highestPower=2*args.poly_k+1
+            print("Using RACE for cache blocking: cache_size=", args.cache_size, ", power=", highestPower)
+            [self.mpkHandle,self.A1]=mpk_setup(self.A1, highestPower, args.cache_size, split)
+            self.perm=mpk_get_perm(self.mpkHandle, self.shape[0])
+            #permute all the objects
+            self.L=self.L[self.perm[:,None], self.perm]
+            self.U=self.U[self.perm[:,None], self.perm]
+            #work-around for diagonal, since it is not subscriptable
+            #not needed diagonal is one, due to normalization
+            #A_prec.isqD = spdiags([1.0/np.sqrt(A.diagonal())], [0], m=A.shape[0], n=A.shape[1])
 
         self.t1 = np.empty(self.shape[0], dtype=self.dtype)
         self.t2 = np.empty(self.shape[0], dtype=self.dtype)
@@ -93,10 +107,16 @@ class poly_op:
 
         See class description for details.
         '''
-        self._neumann(self.U, self.k, w, self.t1)
-        spmv(self.A1, self.t1, self.t2)
-        self._neumann(self.L, self.k, self.t2, v)
+        if self.mpkHandle is None:
+            self._neumann(self.U, self.k, w, self.t1)
+            spmv(self.A1, self.t1, self.t2)
+            self._neumann(self.L, self.k, self.t2, v)
+        else:
+            mpk_neumann_apply(self, w, v)
 
+    def __del__(self):
+        if self.mpkHandle!=None:
+            mpk_free(self.mpkHandle)
 
 # protected
     def _neumann(self, M, k, rhs, sol):

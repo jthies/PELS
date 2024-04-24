@@ -50,6 +50,10 @@ def get_argparser():
                     help='Use a degree-k polynomial preconditioner based on the Neumann series.')
     parser.add_argument('-printerr', action=argparse.BooleanOptionalAction,
                     help='Besides the residual norm, also compute and print the error norm.')
+    parser.add_argument('-use_RACE', type=int, default=0,
+                    help='Use RACE for cache blocking.')
+    parser.add_argument('-cache_size', type=float, default=30,
+                    help='Cache size used to perform RACE\'s cache blocking')
     return parser
 
 if __name__ == '__main__':
@@ -141,9 +145,9 @@ if __name__ == '__main__':
         # building preconditioners typically requires a certain format,
         # in our case, the poly_op class uses scipy functions tril and triu,
         # which are not implemented by the sellcs_matrix class.
-        A_prec = poly_op(A_csr, args.poly_k)
+        A_prec = poly_op(A_csr, args)
         if args.fmt == 'SELL':
-            # note: If A was originally sorted by row-length (sigma>1), use the same 
+            # note: If A was originally sorted by row-length (sigma>1), use the same
             # sorting for L and U to avoid intermittent permutation by setting sigma=1.
             # There still seems to be some kind of bug, though, because the number of
             # iterations will increase with poly_k>0 and sigma>1. Hence this warning.
