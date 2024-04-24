@@ -67,6 +67,7 @@ if __name__=='__main__':
     import argparse
     from scipy.sparse import csr_matrix
     from scipy.io import mmread
+    from sellcs import *
 
     parser = argparse.ArgumentParser(description='Compute smallest eigenvalue of a symmetric sparse matrix using a simple Lanczos method.')
     parser.add_argument('-matfile', type=str, default='None',
