@@ -15,12 +15,12 @@ import numba
 
 import sellcs
 
-import kernels_cpu as cpu
-import kernels_c as cpu_c
+#import kernels_cpu as cpu
 
 # for using OpenMP C implementations rather than Numba-compiled kernels,
 # uncomment this line instead of the above:
-#import kernels_c as cpu
+import kernels_c as cpu
+import kernels_c as cpu_c
 
 # for benchmarking numpy/scipy implementations,
 # uncomment this line instead of the above:

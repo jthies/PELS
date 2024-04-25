@@ -58,6 +58,14 @@ def get_argparser():
 
 if __name__ == '__main__':
 
+    # Note: The Python garbage collector (gc)
+    # kills the performance of the C kernels
+    # for some obscure reason. For the pure
+    # Python/numba/cuda kernels, this is not
+    # the case, but to make things run with
+    # C kernels and RACE, we disable it here.
+    gc.disable()
+
     parser = get_argparser()
     args = parser.parse_args()
 
@@ -138,7 +146,6 @@ if __name__ == '__main__':
     # counters and timers:
     reset_counters()
 
-    gc.disable()
     t0 = perf_counter()
 
     if args.poly_k>0:
