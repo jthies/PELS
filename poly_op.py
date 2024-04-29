@@ -48,17 +48,20 @@ class poly_op:
         self.L = -tril(self.A1,-1).tocsr()
         self.U = -triu(self.A1,1).tocsr()
         self.mpkHandle = None
-        self.perm =None
+        self.permute =None
+        self.unpermute = None
         #if we have RACE, use it
         if args.use_RACE==1:
             split=True
             highestPower=2*args.poly_k+1
             print("Using RACE for cache blocking: cache_size=", args.cache_size, ", power=", highestPower)
             [self.mpkHandle,self.A1]=mpk_setup(self.A1, highestPower, args.cache_size, split)
-            self.perm=mpk_get_perm(self.mpkHandle, self.shape[0])
-            #permute all the objects
-            self.L=self.L[self.perm[:,None], self.perm]
-            self.U=self.U[self.perm[:,None], self.perm]
+            self.permute=mpk_get_perm(self.mpkHandle, self.shape[0])
+            self.unpermute = np.arange(self.shape[0])
+            self.unpermute[self.permute] = np.arange(self.shape[0])
+            #permuteute all the objects
+            self.L=self.L[self.permute[:,None], self.permute]
+            self.U=self.U[self.permute[:,None], self.permute]
             #work-around for diagonal, since it is not subscriptable
             #not needed diagonal is one, due to normalization
             #A_prec.isqD = spdiags([1.0/np.sqrt(A.diagonal())], [0], m=A.shape[0], n=A.shape[1])

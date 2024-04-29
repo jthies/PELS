@@ -148,11 +148,15 @@ if __name__ == '__main__':
 
     t0 = perf_counter()
 
+    t0_pre = perf_counter()
     if args.poly_k>0:
         # building preconditioners typically requires a certain format,
         # in our case, the poly_op class uses scipy functions tril and triu,
         # which are not implemented by the sellcs_matrix class.
         A_prec = poly_op(A_csr, args)
+        if A_prec.mpkHandle != None:
+            b = b[A_prec.permute]
+            A_csr = A_csr[A_prec.permute[:,None], A_prec.permute]
         if args.fmt == 'SELL':
             # note: If A was originally sorted by row-length (sigma>1), use the same
             # sorting for L and U to avoid intermittent permutation by setting sigma=1.
@@ -167,7 +171,11 @@ if __name__ == '__main__':
     if args.printerr:
         x_ex_in = x_ex
 
+    t1_pre = perf_counter()
+
+    t0_soln = perf_counter()
     x_prec, relres, iter = cg_solve(A_prec,b_prec,x0,tol,maxit, x_ex=x_ex_in)
+    t1_soln = perf_counter()
 
     if args.poly_k>0:
         x = clone(x_prec)
@@ -176,6 +184,8 @@ if __name__ == '__main__':
         x = x_prec
 
     t1 = perf_counter()
+    t_pre = t1_pre-t0_pre
+    t_soln = t1_soln-t0_soln
     t_CG = t1-t0
     gc.enable()
 
@@ -183,12 +193,16 @@ if __name__ == '__main__':
 
     print('number of CG iterations: %d'%(iter))
     res = np.empty_like(x)
-    spmv(A,x,res)
+    spmv(A_csr,x,res)
     res=b-res
     print('relative residual of computed solution: %e'%(norm(res)/norm(b)))
 
     if args.fmt=='SELL' and sigma>1:
         x = x[A.unpermute]
+
+    if args.poly_k>0:
+        if A_prec.mpkHandle != None:
+            x = x[A_prec.unpermute]
 
     print('relative error of computed solution: %e'%(norm(x-x_ex)/norm(x_ex)))
 
@@ -197,4 +211,6 @@ if __name__ == '__main__':
         hw_string+=' ('+str(numba.get_num_threads())+' cores)'
     print('Hardware: '+hw_string)
     perf_report(type)
+    print('Total time for constructing precon: %g seconds.'%(t_pre))
+    print('Total time for solving: %g seconds.'%(t_soln))
     print('Total time for CG: %g seconds.'%(t_CG))
