@@ -1,3 +1,15 @@
+/*******************************************************************************************/
+/* This file is part of the training material available at                                 */
+/* https://github.com/jthies/PELS                                                          */
+/* You may redistribute it and/or modify it under the terms of the BSD-style licence       */
+/* included in this software.                                                              */
+/*                                                                                         */
+/* Contact: Christie Alappat (christiealappatt@gmail.com)                                  */
+/*                                                                                         */
+/*******************************************************************************************/
+
+
+
 #ifndef RACE_TIMER_H
 #define RACE_TIMER_H
 
