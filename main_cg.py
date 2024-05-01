@@ -18,43 +18,11 @@ from poly_op import *
 from sellcs import sellcs_matrix
 
 from matrix_generator import create_matrix
+from pels_args import get_argparser
 
 import numba
-import argparse
 
 import gc
-
-def get_argparser():
-    parser = argparse.ArgumentParser(description='Run a CG benchmark.')
-    parser.add_argument('-matfile', type=str, default='None',
-                    help='MatrixMarket filename for matrix A')
-    parser.add_argument('-matgen', type=str, default='None',
-                    help='Matrix generator string  for matrix A (e.g., "Laplace128x64"')
-    parser.add_argument('-rhsfile', type=str, default='None',
-                    help='MatrixMarket filename for right-hand side vector b')
-    parser.add_argument('-solfile', type=str, default='None',
-                    help='MatrixMarket filename for exact solution x')
-    parser.add_argument('-maxit', type=int, default=1000,
-                    help='Maximum number of CG iterations allowed.')
-    parser.add_argument('-tol', type=float, default=1e-6,
-                    help='Convergence criterion: ||b-A*x||_2/||b||_2<tol')
-    parser.add_argument('-fmt', type=str, default='CSR',
-                    help='Sparse matrix format to be used [CSR, SELL]')
-    parser.add_argument('-C', type=int, default=1,
-                    help='Chunk size C for SELL-C-sigma format.')
-    parser.add_argument('-sigma', type=int, default=1,
-                    help='Sorting scope sigma for SELL-C-sigma format.')
-    parser.add_argument('-seed', type=int, default=None,
-                    help='Random seed to make runs reproducible')
-    parser.add_argument('-poly_k', type=int, default=0,
-                    help='Use a degree-k polynomial preconditioner based on the Neumann series.')
-    parser.add_argument('-printerr', action=argparse.BooleanOptionalAction,
-                    help='Besides the residual norm, also compute and print the error norm.')
-    parser.add_argument('-use_RACE', type=int, default=0,
-                    help='Use RACE for cache blocking.')
-    parser.add_argument('-cache_size', type=float, default=30,
-                    help='Cache size used to perform RACE\'s cache blocking')
-    return parser
 
 if __name__ == '__main__':
 
@@ -67,6 +35,18 @@ if __name__ == '__main__':
     gc.disable()
 
     parser = get_argparser()
+
+    # add driver-specific command-line arguments for polynomial preconditioning with or without RACE:
+    parser.add_argument('-printerr', action=argparse.BooleanOptionalAction,
+                    help='Besides the residual norm, also compute and print the error norm.')
+    parser.add_argument('-poly_k', type=int, default=0,
+                    help='Use a degree-k polynomial preconditioner based on the Neumann series.')
+    parser.add_argument('-use_RACE', type=int, default=0,
+                    help='Use RACE for cache blocking.')
+    parser.add_argument('-cache_size', type=float, default=30,
+                    help='Cache size used to perform RACE\'s cache blocking')
+
+
     args = parser.parse_args()
 
     if args.seed is not None:

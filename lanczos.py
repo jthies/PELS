@@ -12,6 +12,8 @@ import numpy as np
 import scipy
 from kernels import *
 
+from pels_argparser imprt get_argparser
+
 def min_eig(A, v0, tol, maxit, verbose=True):
     '''
     lanczos.eig_min: compute the smallest eigenvalue and eigenvector of a symmetric sparse matrix.
@@ -64,26 +66,13 @@ def min_eig(A, v0, tol, maxit, verbose=True):
 
 if __name__=='__main__':
     from matrix_generator import create_matrix
-    import argparse
+    from pels_argparser import get_argparse
     from scipy.sparse import csr_matrix
     from scipy.io import mmread
     from sellcs import *
 
-    parser = argparse.ArgumentParser(description='Compute smallest eigenvalue of a symmetric sparse matrix using a simple Lanczos method.')
-    parser.add_argument('-matfile', type=str, default='None',
-                    help='MatrixMarket filename for matrix A')
-    parser.add_argument('-matgen', type=str, default='None',
-                    help='Matrix generator string  for matrix A (e.g., "Laplace128x64"')
-    parser.add_argument('-maxit', type=int, default=1000,
-                    help='Maximum number of CG iterations allowed.')
-    parser.add_argument('-tol', type=float, default=1e-6,
-                    help='Convergence criterion: ||b-A*x||_2/||b||_2<tol')
-    parser.add_argument('-fmt', type=str, default='CSR',
-                    help='Sparse matrix format to be used [CSR, SELL]')
-    parser.add_argument('-C', type=int, default=1,
-                    help='Chunk size C for SELL-C-sigma format.')
-    parser.add_argument('-sigma', type=int, default=1,
-                    help='Sorting scope sigma for SELL-C-sigma format.')
+    parser = get_argparser()
+
     parser.add_argument('-seed', type=int, default=None,
                     help='Random seed to make runs reproducible')
 

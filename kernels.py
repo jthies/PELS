@@ -15,12 +15,21 @@ import numba
 
 import sellcs
 
-#import kernels_cpu as cpu
+import sys
 
-# for using OpenMP C implementations rather than Numba-compiled kernels,
-# uncomment this line instead of the above:
-import kernels_c as cpu
-import kernels_c as cpu_c
+have_RACE = False
+
+if '-use_RACE' in sys.argv:
+    print('Using C kernels and RACE on CPU')
+    import kernels_c as cpu
+    import kernels_c as cpu_c
+    have_RACE = True
+elif '-c_kernels' in sys.argv:
+    print('Using C kernels on CPU')
+    import kernels_c as cpu
+else:
+    print('Using Numba kernels on CPU')
+    import kernels_cpu as cpu
 
 # for benchmarking numpy/scipy implementations,
 # uncomment this line instead of the above:
@@ -186,9 +195,14 @@ def diag_spmv(A, x, y):
         cpu.vscale(A.data.reshape(x.size), x, y)
 
 def mpk_get_perm(mpk_handle, N):
+
+    if not have_RACE:
+        raise Exception('RACE is not available, you may need to add the -use_RACE flag and/or install the RACE library.')
     return cpu_c.csr_mpk_get_perm(mpk_handle, N)
 
 def mpk_setup(A, power, cacheSize, split):
+    if not have_RACE:
+        raise Exception('RACE is not available, you may need to add the -use_RACE flag and/or install the RACE library.')
     if type(A)==scipy.sparse.csr_matrix:
         data = A.data
         indptr = A.indptr
@@ -199,6 +213,8 @@ def mpk_setup(A, power, cacheSize, split):
         return mpk_handle, A
 
 def mpk_free(mpk_handle):
+    if not have_RACE:
+        raise Exception('RACE is not available, you may need to add the -use_RACE flag and/or install the RACE library.')
     cpu_c.csr_mpk_free(mpk_handle)
 
 def mpk_neumann_apply(polyHandle, x, y):
