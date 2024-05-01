@@ -35,10 +35,15 @@ class poly_op:
     For symmetric and positive (spd) matrices A, this preconditioned operator is spd,
     which makes it suitable for CG.
 
+    If -use_RACE is given on the command-line, and the RACE library is found,
+    cache blocking is used to increase the performance of the operator. The
+    cache_size parameter can be used to fine-tune the performance with RACE.
+    If RACE is not available, it is ignored.
+
     '''
 
-    def __init__(self, A, args):
-        self.k = args.poly_k
+    def __init__(self, A, poly_k, cache_size=30):
+        self.k = poly_k
         self.shape = A.shape
         self.dtype = A.dtype
         # store the inverse of the square-root of the diagonal
@@ -51,11 +56,11 @@ class poly_op:
         self.permute =None
         self.unpermute = None
         #if we have RACE, use it
-        if args.use_RACE==1:
+        if have_RACE:
             split=True
-            highestPower=2*args.poly_k+1
-            print("Using RACE for cache blocking: cache_size=", args.cache_size, ", power=", highestPower)
-            [self.mpkHandle,self.A1]=mpk_setup(self.A1, highestPower, args.cache_size, split)
+            highestPower=2*poly_k+1
+            print("Using RACE for cache blocking: cache_size=", cache_size, ", power=", highestPower)
+            [self.mpkHandle,self.A1]=mpk_setup(self.A1, highestPower, cache_size, split)
             self.permute=mpk_get_perm(self.mpkHandle, self.shape[0])
             self.unpermute = np.arange(self.shape[0])
             self.unpermute[self.permute] = np.arange(self.shape[0])
@@ -118,7 +123,7 @@ class poly_op:
             mpk_neumann_apply(self, w, v)
 
     def __del__(self):
-        if self.mpkHandle!=None:
+        if hasattr(self, 'mpkHandle'):
             mpk_free(self.mpkHandle)
 
 # protected
