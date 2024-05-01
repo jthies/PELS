@@ -22,7 +22,7 @@ have_RACE = False
 if '-use_RACE' in sys.argv:
     print('Using C kernels and RACE on CPU')
     import kernels_c as cpu
-    import kernels_c as cpu_c
+    import race_kernels as race_mpk
     have_RACE = True
 elif '-c_kernels' in sys.argv:
     print('Using C kernels on CPU')
@@ -197,30 +197,30 @@ def diag_spmv(A, x, y):
 def mpk_get_perm(mpk_handle, N):
 
     if not have_RACE:
-        raise Exception('RACE is not available, you may need to add the -use_RACE flag and/or install the RACE library.')
-    return cpu_c.csr_mpk_get_perm(mpk_handle, N)
+        raise AssertionError('RACE is not available, you may need to add the -use_RACE flag and/or install the RACE library.')
+    return race_mpk.csr_mpk_get_perm(mpk_handle, N)
 
 def mpk_setup(A, power, cacheSize, split):
     if not have_RACE:
-        raise Exception('RACE is not available, you may need to add the -use_RACE flag and/or install the RACE library.')
+        raise AssertionError('RACE is not available, you may need to add the -use_RACE flag and/or install the RACE library.')
     if type(A)==scipy.sparse.csr_matrix:
         data = A.data
         indptr = A.indptr
         indices = A.indices
-        mpk_handle=cpu_c.csr_mpk_setup(indptr, indices, data, power, cacheSize, split)
+        mpk_handle=race_mpk.csr_mpk_setup(indptr, indices, data, power, cacheSize, split)
         perm = mpk_get_perm(mpk_handle, A.shape[0])
         A = A[:,perm][perm,:]
         return mpk_handle, A
 
 def mpk_free(mpk_handle):
     if not have_RACE:
-        raise Exception('RACE is not available, you may need to add the -use_RACE flag and/or install the RACE library.')
-    cpu_c.csr_mpk_free(mpk_handle)
+        raise AssertionError('RACE is not available, you may need to add the -use_RACE flag and/or install the RACE library.')
+    race_mpk.csr_mpk_free(mpk_handle)
 
 def mpk_neumann_apply(polyHandle, x, y):
     t0 = perf_counter()
     k= polyHandle.k
-    cpu_c.csr_mpk_neumann_apply(polyHandle.mpkHandle, k, x, y)
+    race_mpk.csr_mpk_neumann_apply(polyHandle.mpkHandle, k, x, y)
     t1 = perf_counter()
     time['spmv']  += t1-t0
     calls['spmv'] += 2*k+1

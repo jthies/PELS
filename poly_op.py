@@ -123,7 +123,7 @@ class poly_op:
             mpk_neumann_apply(self, w, v)
 
     def __del__(self):
-        if hasattr(self, 'mpkHandle'):
+        if hasattr(self, 'mpkHandle') and self.mpkHandle is not None:
             mpk_free(self.mpkHandle)
 
 # protected
