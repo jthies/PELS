@@ -1,4 +1,4 @@
-import argparse
+from argparse import *
 
 def get_argparser():
     '''
@@ -12,15 +12,11 @@ def get_argparser():
 
     For a full list, run your driver with the --help optino.
     '''
-    parser = argparse.ArgumentParser(description='Run a CG benchmark.')
+    parser = ArgumentParser(description='Run a CG benchmark.')
     parser.add_argument('-matfile', type=str, default='None',
                     help='MatrixMarket filename for matrix A')
     parser.add_argument('-matgen', type=str, default='None',
                     help='Matrix generator string  for matrix A (e.g., "Laplace128x64"')
-    parser.add_argument('-rhsfile', type=str, default='None',
-                    help='MatrixMarket filename for right-hand side vector b')
-    parser.add_argument('-solfile', type=str, default='None',
-                    help='MatrixMarket filename for exact solution x')
     parser.add_argument('-maxit', type=int, default=1000,
                     help='Maximum number of CG iterations allowed.')
     parser.add_argument('-tol', type=float, default=1e-6,
@@ -33,7 +29,7 @@ def get_argparser():
                     help='Sorting scope sigma for SELL-C-sigma format.')
     parser.add_argument('-seed', type=int, default=None,
                     help='Random seed to make runs reproducible')
-    parser.add_argument('-c_kernels', action=argparse.BooleanOptionalAction,
+    parser.add_argument('-c_kernels', action=BooleanOptionalAction,
                     help='Use C/OpenMP kernels for the CPU (instead of Numba).'
                          '-c_kernels is required for using RACE, but may cause a conflict with the GPU (numba) kernels.')
 

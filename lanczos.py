@@ -12,14 +12,12 @@ import numpy as np
 import scipy
 from kernels import *
 
-from pels_argparser imprt get_argparser
-
 def min_eig(A, v0, tol, maxit, verbose=True):
     '''
     lanczos.eig_min: compute the smallest eigenvalue and eigenvector of a symmetric sparse matrix.
 
     lambda = min_eig(A, v0, tol, maxit, verbose)
-    Where A is a symmetric scipy.sparse.csr_matrix, v0 is a numpy.array of size A.shape[0],
+    Where A is a symmetric scipy.sparse.csr_matrix or sellcs.sellcs_matrix, v0 is a numpy.array of size A.shape[0],
     tol is the convergence tolerance and maxit the maximum number of iterations.
     '''
     alpha = np.zeros(maxit)
@@ -65,16 +63,13 @@ def min_eig(A, v0, tol, maxit, verbose=True):
 
 
 if __name__=='__main__':
+    from pels_args import get_argparser
     from matrix_generator import create_matrix
-    from pels_argparser import get_argparse
     from scipy.sparse import csr_matrix
     from scipy.io import mmread
     from sellcs import *
 
     parser = get_argparser()
-
-    parser.add_argument('-seed', type=int, default=None,
-                    help='Random seed to make runs reproducible')
 
     args = parser.parse_args()
 

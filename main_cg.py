@@ -18,7 +18,7 @@ from poly_op import *
 from sellcs import sellcs_matrix
 
 from matrix_generator import create_matrix
-from pels_args import get_argparser
+from pels_args import *
 
 import numba
 
@@ -37,8 +37,14 @@ if __name__ == '__main__':
     parser = get_argparser()
 
     # add driver-specific command-line arguments for polynomial preconditioning with or without RACE:
-    parser.add_argument('-printerr', action=argparse.BooleanOptionalAction,
+    parser.add_argument('-printerr', action=BooleanOptionalAction,
                     help='Besides the residual norm, also compute and print the error norm.')
+    parser.add_argument('-rhsfile', type=str, default='None',
+                    help='MatrixMarket filename for right-hand side vector b')
+    parser.add_argument('-solfile', type=str, default='None',
+                    help='MatrixMarket filename for exact solution x')
+    parser.add_argument('-poly_k', type=int, default=0,
+                    help='Use a degree-k polynomial preconditioner based on the Neumann series.')
     parser.add_argument('-poly_k', type=int, default=0,
                     help='Use a degree-k polynomial preconditioner based on the Neumann series.')
     parser.add_argument('-use_RACE', type=int, default=0,
