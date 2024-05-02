@@ -11,6 +11,8 @@
 import numpy as np
 from scipy.sparse import *
 from kernels import *
+from race_mpk import have_RACE
+import sys
 
 class poly_op:
     '''
@@ -35,11 +37,15 @@ class poly_op:
     For symmetric and positive (spd) matrices A, this preconditioned operator is spd,
     which makes it suitable for CG.
 
+    If -use_RACE is given on the command-line, and the RACE library is found,
+    cache blocking is used to increase the performance of the operator. The
+    cache_size parameter can be used to fine-tune the performance with RACE.
+    If RACE is not available, it is ignored.
+
     '''
 
-    def __init__(self, A, k):
-
-        self.k = k
+    def __init__(self, A, poly_k, cache_size=30):
+        self.k = poly_k
         self.shape = A.shape
         self.dtype = A.dtype
         # store the inverse of the square-root of the diagonal
@@ -48,6 +54,27 @@ class poly_op:
         self.A1 = self.isqD*A*self.isqD
         self.L = -tril(self.A1,-1).tocsr()
         self.U = -triu(self.A1,1).tocsr()
+        self.mpkHandle = None
+        self.use_RACE = False
+        if have_RACE and '-use_RACE' in sys.argv:
+            self.use_RACE = True
+        self.permute =None
+        self.unpermute = None
+        #if we have RACE, use it
+        if self.use_RACE:
+            split=True
+            highestPower=2*poly_k+1
+            print("Using RACE for cache blocking: cache_size=", cache_size, ", power=", highestPower)
+            [self.mpkHandle,self.A1]=mpk_setup(self.A1, highestPower, cache_size, split)
+            self.permute=mpk_get_perm(self.mpkHandle, self.shape[0])
+            self.unpermute = np.arange(self.shape[0])
+            self.unpermute[self.permute] = np.arange(self.shape[0])
+            #permuteute all the objects
+            self.L=self.L[self.permute[:,None], self.permute]
+            self.U=self.U[self.permute[:,None], self.permute]
+            #work-around for diagonal, since it is not subscriptable
+            #not needed diagonal is one, due to normalization
+            #A_prec.isqD = spdiags([1.0/np.sqrt(A.diagonal())], [0], m=A.shape[0], n=A.shape[1])
 
         self.t1 = np.empty(self.shape[0], dtype=self.dtype)
         self.t2 = np.empty(self.shape[0], dtype=self.dtype)
@@ -93,10 +120,16 @@ class poly_op:
 
         See class description for details.
         '''
-        self._neumann(self.U, self.k, w, self.t1)
-        spmv(self.A1, self.t1, self.t2)
-        self._neumann(self.L, self.k, self.t2, v)
+        if self.mpkHandle is None:
+            self._neumann(self.U, self.k, w, self.t1)
+            spmv(self.A1, self.t1, self.t2)
+            self._neumann(self.L, self.k, self.t2, v)
+        else:
+            mpk_neumann_apply(self, w, v)
 
+    def __del__(self):
+        if hasattr(self, 'mpkHandle') and self.mpkHandle is not None:
+            mpk_free(self.mpkHandle)
 
 # protected
     def _neumann(self, M, k, rhs, sol):

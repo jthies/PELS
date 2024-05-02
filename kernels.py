@@ -15,11 +15,19 @@ import numba
 
 import sellcs
 
-import kernels_cpu as cpu
+import sys
 
-# for using OpenMP C implementations rather than Numba-compiled kernels,
-# uncomment this line instead of the above:
-#import kernels_c as cpu
+if '-use_RACE' in sys.argv:
+    print('Using C kernels and RACE on CPU')
+    import kernels_c as cpu
+    import race_mpk
+    from race_mpk import have_RACE
+elif '-c_kernels' in sys.argv:
+    print('Using C kernels on CPU')
+    import kernels_c as cpu
+else:
+    print('Using Numba kernels on CPU')
+    import kernels_cpu as cpu
 
 # for benchmarking numpy/scipy implementations,
 # uncomment this line instead of the above:
@@ -183,6 +191,42 @@ def diag_spmv(A, x, y):
         gpu.vscale(A.cu_data, x, y)
     else:
         cpu.vscale(A.data.reshape(x.size), x, y)
+
+def mpk_get_perm(mpk_handle, N):
+
+    if not have_RACE:
+        raise AssertionError('RACE is not available, you may need to add the -use_RACE flag and/or install the RACE library.')
+    return race_mpk.csr_mpk_get_perm(mpk_handle, N)
+
+def mpk_setup(A, power, cacheSize, split):
+    if not have_RACE:
+        raise AssertionError('RACE is not available, you may need to add the -use_RACE flag and/or install the RACE library.')
+    if type(A)==scipy.sparse.csr_matrix:
+        data = A.data
+        indptr = A.indptr
+        indices = A.indices
+        mpk_handle=race_mpk.csr_mpk_setup(indptr, indices, data, power, cacheSize, split)
+        perm = mpk_get_perm(mpk_handle, A.shape[0])
+        A = A[:,perm][perm,:]
+        return mpk_handle, A
+
+def mpk_free(mpk_handle):
+    if not have_RACE:
+        raise AssertionError('RACE is not available, you may need to add the -use_RACE flag and/or install the RACE library.')
+    race_mpk.csr_mpk_free(mpk_handle)
+
+def mpk_neumann_apply(polyHandle, x, y):
+    t0 = perf_counter()
+    k= polyHandle.k
+    race_mpk.csr_mpk_neumann_apply(polyHandle.mpkHandle, k, x, y)
+    t1 = perf_counter()
+    time['spmv']  += t1-t0
+    calls['spmv'] += 2*k+1
+    if calls['spmv']>0:
+        load['spmv']  += (k+1)*(12*polyHandle.A1.nnz)-2*k*8*(polyHandle.A1.shape[1])+(2*k+1)*8*(polyHandle.A1.shape[0]+polyHandle.A1.shape[1])
+        store['spmv'] += (2*k+1)*8*polyHandle.A1.shape[0]
+        flop['spmv'] += (k+1)*2*polyHandle.A1.nnz-(2*k*2*polyHandle.A1.shape[1])
+
 
 def clone(v):
     w = None

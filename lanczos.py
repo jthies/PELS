@@ -17,7 +17,7 @@ def min_eig(A, v0, tol, maxit, verbose=True):
     lanczos.eig_min: compute the smallest eigenvalue and eigenvector of a symmetric sparse matrix.
 
     lambda = min_eig(A, v0, tol, maxit, verbose)
-    Where A is a symmetric scipy.sparse.csr_matrix, v0 is a numpy.array of size A.shape[0],
+    Where A is a symmetric scipy.sparse.csr_matrix or sellcs.sellcs_matrix, v0 is a numpy.array of size A.shape[0],
     tol is the convergence tolerance and maxit the maximum number of iterations.
     '''
     alpha = np.zeros(maxit)
@@ -63,29 +63,13 @@ def min_eig(A, v0, tol, maxit, verbose=True):
 
 
 if __name__=='__main__':
+    from pels_args import get_argparser
     from matrix_generator import create_matrix
-    import argparse
     from scipy.sparse import csr_matrix
     from scipy.io import mmread
     from sellcs import *
 
-    parser = argparse.ArgumentParser(description='Compute smallest eigenvalue of a symmetric sparse matrix using a simple Lanczos method.')
-    parser.add_argument('-matfile', type=str, default='None',
-                    help='MatrixMarket filename for matrix A')
-    parser.add_argument('-matgen', type=str, default='None',
-                    help='Matrix generator string  for matrix A (e.g., "Laplace128x64"')
-    parser.add_argument('-maxit', type=int, default=1000,
-                    help='Maximum number of CG iterations allowed.')
-    parser.add_argument('-tol', type=float, default=1e-6,
-                    help='Convergence criterion: ||b-A*x||_2/||b||_2<tol')
-    parser.add_argument('-fmt', type=str, default='CSR',
-                    help='Sparse matrix format to be used [CSR, SELL]')
-    parser.add_argument('-C', type=int, default=1,
-                    help='Chunk size C for SELL-C-sigma format.')
-    parser.add_argument('-sigma', type=int, default=1,
-                    help='Sorting scope sigma for SELL-C-sigma format.')
-    parser.add_argument('-seed', type=int, default=None,
-                    help='Random seed to make runs reproducible')
+    parser = get_argparser()
 
     args = parser.parse_args()
 

@@ -18,43 +18,39 @@ from poly_op import *
 from sellcs import sellcs_matrix
 
 from matrix_generator import create_matrix
+from pels_args import *
 
 import numba
-import argparse
 
 import gc
 
-def get_argparser():
-    parser = argparse.ArgumentParser(description='Run a CG benchmark.')
-    parser.add_argument('-matfile', type=str, default='None',
-                    help='MatrixMarket filename for matrix A')
-    parser.add_argument('-matgen', type=str, default='None',
-                    help='Matrix generator string  for matrix A (e.g., "Laplace128x64"')
+if __name__ == '__main__':
+
+    # Note: The Python garbage collector (gc)
+    # kills the performance of the C kernels
+    # for some obscure reason. For the pure
+    # Python/numba/cuda kernels, this is not
+    # the case, but to make things run with
+    # C kernels and RACE, we disable it here.
+    #gc.disable()
+
+    parser = get_argparser()
+
+    # add driver-specific command-line arguments for polynomial preconditioning with or without RACE:
+    parser.add_argument('-printerr', action=BooleanOptionalAction,
+                    help='Besides the residual norm, also compute and print the error norm.')
     parser.add_argument('-rhsfile', type=str, default='None',
                     help='MatrixMarket filename for right-hand side vector b')
     parser.add_argument('-solfile', type=str, default='None',
                     help='MatrixMarket filename for exact solution x')
-    parser.add_argument('-maxit', type=int, default=1000,
-                    help='Maximum number of CG iterations allowed.')
-    parser.add_argument('-tol', type=float, default=1e-6,
-                    help='Convergence criterion: ||b-A*x||_2/||b||_2<tol')
-    parser.add_argument('-fmt', type=str, default='CSR',
-                    help='Sparse matrix format to be used [CSR, SELL]')
-    parser.add_argument('-C', type=int, default=1,
-                    help='Chunk size C for SELL-C-sigma format.')
-    parser.add_argument('-sigma', type=int, default=1,
-                    help='Sorting scope sigma for SELL-C-sigma format.')
-    parser.add_argument('-seed', type=int, default=None,
-                    help='Random seed to make runs reproducible')
     parser.add_argument('-poly_k', type=int, default=0,
                     help='Use a degree-k polynomial preconditioner based on the Neumann series.')
-    parser.add_argument('-printerr', action=argparse.BooleanOptionalAction,
-                    help='Besides the residual norm, also compute and print the error norm.')
-    return parser
+    parser.add_argument('-use_RACE', action=BooleanOptionalAction,
+                    help='Use RACE for cache blocking.')
+    parser.add_argument('-cache_size', type=float, default=30,
+                    help='Cache size used to perform RACE\'s cache blocking')
 
-if __name__ == '__main__':
 
-    parser = get_argparser()
     args = parser.parse_args()
 
     if args.seed is not None:
@@ -134,16 +130,24 @@ if __name__ == '__main__':
     # counters and timers:
     reset_counters()
 
-    gc.disable()
+    # There is a performance issue with the Python Garbage Collector and calling
+    # C functions from RACE, so we disable the GC if RCE is requested.
+    if args.use_RACE:
+        gc.disable()
+
     t0 = perf_counter()
 
+    t0_pre = perf_counter()
     if args.poly_k>0:
         # building preconditioners typically requires a certain format,
         # in our case, the poly_op class uses scipy functions tril and triu,
         # which are not implemented by the sellcs_matrix class.
         A_prec = poly_op(A_csr, args.poly_k)
+        if A_prec.mpkHandle != None:
+            b = b[A_prec.permute]
+            A_csr = A_csr[A_prec.permute[:,None], A_prec.permute]
         if args.fmt == 'SELL':
-            # note: If A was originally sorted by row-length (sigma>1), use the same 
+            # note: If A was originally sorted by row-length (sigma>1), use the same
             # sorting for L and U to avoid intermittent permutation by setting sigma=1.
             # There still seems to be some kind of bug, though, because the number of
             # iterations will increase with poly_k>0 and sigma>1. Hence this warning.
@@ -156,7 +160,11 @@ if __name__ == '__main__':
     if args.printerr:
         x_ex_in = x_ex
 
+    t1_pre = perf_counter()
+
+    t0_soln = perf_counter()
     x_prec, relres, iter = cg_solve(A_prec,b_prec,x0,tol,maxit, x_ex=x_ex_in)
+    t1_soln = perf_counter()
 
     if args.poly_k>0:
         x = clone(x_prec)
@@ -165,6 +173,8 @@ if __name__ == '__main__':
         x = x_prec
 
     t1 = perf_counter()
+    t_pre = t1_pre-t0_pre
+    t_soln = t1_soln-t0_soln
     t_CG = t1-t0
     gc.enable()
 
@@ -172,12 +182,16 @@ if __name__ == '__main__':
 
     print('number of CG iterations: %d'%(iter))
     res = np.empty_like(x)
-    spmv(A,x,res)
+    spmv(A_csr,x,res)
     res=b-res
     print('relative residual of computed solution: %e'%(norm(res)/norm(b)))
 
     if args.fmt=='SELL' and sigma>1:
         x = x[A.unpermute]
+
+    if args.poly_k>0:
+        if A_prec.mpkHandle != None:
+            x = x[A_prec.unpermute]
 
     print('relative error of computed solution: %e'%(norm(x-x_ex)/norm(x_ex)))
 
@@ -186,4 +200,9 @@ if __name__ == '__main__':
         hw_string+=' ('+str(numba.get_num_threads())+' cores)'
     print('Hardware: '+hw_string)
     perf_report(type)
+    print('Total time for constructing precon: %g seconds.'%(t_pre))
+    print('Total time for solving: %g seconds.'%(t_soln))
     print('Total time for CG: %g seconds.'%(t_CG))
+
+    if args.use_RACE:
+        gc.enable()
