@@ -45,8 +45,6 @@ if __name__ == '__main__':
                     help='MatrixMarket filename for exact solution x')
     parser.add_argument('-poly_k', type=int, default=0,
                     help='Use a degree-k polynomial preconditioner based on the Neumann series.')
-    parser.add_argument('-poly_k', type=int, default=0,
-                    help='Use a degree-k polynomial preconditioner based on the Neumann series.')
     parser.add_argument('-use_RACE', type=int, default=0,
                     help='Use RACE for cache blocking.')
     parser.add_argument('-cache_size', type=float, default=30,
