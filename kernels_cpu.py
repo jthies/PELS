@@ -11,20 +11,22 @@
 import numpy as np
 from numba import jit, prange, get_num_threads, float64
 import scipy
-
-# Benchmarks run on 2x 32-core Intel Xeon 6448Y "Sapphire Rapids"
-benchmarks_numa = {'load': 121, 'store':  91, 'copy':  95, 'triad':  98}
-benchmarks_node = {'load': 480, 'store': 348, 'copy': 384, 'triad': 388}
+import json
 
 def memory_benchmarks():
+    benchmarks = {'label': 'undefined', 'triad': 0, 'load': 0, 'store': 0, 'copy': 0}
+    try:
+        with open('cpu.json', 'r') as f:
+            benchmarks = json.load(f)
+    except:
+        return benchmarks
     nthreads = get_num_threads()
-    nnuma    = (nthreads+15)//16
-    if nthreads == 16:
-        return benchmarks_numa
-    elif nnuma==4:
-        return benchmarks_node
+    ncores_data = benchmarks['cores']
+    nnuma    = (nthreads+ncores_data-1)//ncores_data
+    if nthreads == ncores_data:
+        return benchmarks
     else:
-        result = benchmarks_numa.copy()
+        result = benchmarks.copy()
         for k in result.keys():
             result[k] *=nnuma
         return result

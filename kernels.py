@@ -304,7 +304,24 @@ def dot(x,y):
     return s
 
 def perf_report(type):
+    '''
+    After running a solver, print a performance summary of the
+    kernels in this module (dot, axpby, spmv...). The argument 'type'
+    should be either 'cpu' or 'gpu', dependning on which hardware you
+    ran. It is used to get some benchmark values from files cpujson or
+    gpu.json. You should either adjust these files to match your system,
+    or remove them to skip printing the roofline upper bounds.
+    '''
     bench = memory_benchmarks(type)
+    print('Hardware: '+bench['label'])
+    have_bench = True
+    if bench['label'] == 'undefined':
+        have_bench = False
+        print('(roofline values will be skipped -- use cpu.json and/or gpu.json to provide memory bandwidth data)')
+
+    if type == 'cpu':
+        nthreads = numba.get_num_threads()
+        print('Number of threads: %d'%(nthreads))
 
     # total measured time
     t_tot  = 0
@@ -313,28 +330,18 @@ def perf_report(type):
     # total number of functions called
     total_calls = 0
 
-    print('kernel\tcalls\tbw_meas\tbw_expected\tt_meas/call\tt_expected/call\n')
+    print('kernel\tcalls\tbw_meas\tbw_roofline\tt_meas/call\tt_roofline/call\n')
     for kern in ('dot', 'axpby', 'spmv'):
         if calls[kern]>0:
-            print('%s\t%d\t%g GB/s\t%g GB/s\t%g s \t%g s '%
-                (kern, calls[kern], (load[kern]+store[kern])*1e-9/time[kern], bench[bench_map[kern]],
-                time[kern]/calls[kern], (load[kern]+store[kern])*1e-9/bench[bench_map[kern]]/calls[kern]))
             t_tot += time[kern]
-            t_mod += (load[kern]+store[kern])*1e-9/bench[bench_map[kern]]
             total_calls += calls[kern]
+            if have_bench:
+                print('%s\t%d\t%g GB/s\t%g GB/s\t%g s \t%g s '%
+                    (kern, calls[kern], (load[kern]+store[kern])*1e-9/time[kern], bench[bench_map[kern]], time[kern]/calls[kern], (load[kern]+store[kern])*1e-9/bench[bench_map[kern]]/calls[kern]))
+                t_mod += (load[kern]+store[kern])*1e-9/bench[bench_map[kern]]
+            else:
+                print('%s\t%d\t%g GB/s\t - \t%g s \t - '%
+                    (kern, calls[kern], (load[kern]+store[kern])*1e-9/time[kern], time[kern]/calls[kern]))
 
     print('Total\t \t \t \t \t \t %g s \t %g s'%(t_tot, t_mod))
 
-def perf_report_plot(type, filename=None):
-    from matplotlib import pyplot as plt
-    bench = memory_benchmarks(type)
-    x = [1, 2, 3]
-    xlabels = ['dot', 'axpby', 'spmv']
-    plt.plot(x, [ bench['load'], bench['triad'], bench['triad']], 's')
-    plt.plot(x, [ load['dot']/time['dot']*1e-9, (load['axpby']+store['axpby'])/time['axpby']*1e-9, (load['spmv']+store['spmv'])/time['spmv']*1e-9], 'x')
-    plt.xticks([1,2,3],xlabels)
-    plt.ylabel('GB/s')
-    if filename==None:
-        plt.show()
-    else:
-        plt.savefig(filename)

@@ -15,11 +15,14 @@ import scipy
 from math import *
 import sellcs
 
-# NVidia A100 (measured using GHOST -- copy benchmark missing from my data)
-benchmarks_a100 = {'load': 1560, 'store': 1780, 'copy': 0, 'triad': 1690}
-
 def memory_benchmarks():
-    return benchmarks_a100
+    benchmarks = {'label': 'undefined', 'triad': 0, 'load': 0, 'store': 0, 'copy': 0}
+    try:
+        with open('gpu.json', 'r') as f:
+            benchmarks = json.load(f)
+    except:
+        pass
+    return benchmarks
 
 def to_device(A):
     if type(A) == scipy.sparse.csr_matrix or type(A) == sellcs.sellcs_matrix:

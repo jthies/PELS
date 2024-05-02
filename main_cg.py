@@ -200,8 +200,9 @@ if __name__ == '__main__':
         hw_string+=' ('+str(numba.get_num_threads())+' cores)'
     print('Hardware: '+hw_string)
     perf_report(type)
-    print('Total time for constructing precon: %g seconds.'%(t_pre))
-    print('Total time for solving: %g seconds.'%(t_soln))
+    if args.poly_k>0:
+        print('Total time for constructing precon: %g seconds.'%(t_pre))
+        print('Total time for solving: %g seconds.'%(t_soln))
     print('Total time for CG: %g seconds.'%(t_CG))
 
     if args.use_RACE:
