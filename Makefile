@@ -1,11 +1,5 @@
 
-# GCC
-CC=gcc
-CFLAGS=-fPIC -O3 -fopenmp -march=native
-
-# Intel LLVM-based compiler
-#CC=icx
-#CFLAGS=-fPIC -O3 -qopenmp -xHOST -fimf-use-svml=true #-Xclang -target-feature -Xclang +prefer-no-gather
+include make.inc
 
 OBJ=vector_kernels.o spmv_kernels.o
 

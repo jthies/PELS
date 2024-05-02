@@ -1,11 +1,9 @@
-CXX=icpx
-#CXXFLAGS=-Iinclude -fPIC -O3 -qopenmp -xHOST -fimf-use-svml=true #-Xclang -target-feature -Xclang +prefer-no-gather
-CXXFLAGS=-Iinclude -fPIC -O3 -qopenmp -fimf-use-svml=true #-Xclang -target-feature -Xclang +prefer-no-gather
+include ../make.inc
 
 OBJ=sparsemat.o densemat.o mpk.o
 
-libkernels.so: ${OBJ}
-	${CXX} ${CXXFLAGS} -shared -o lib/libmpk.so ${OBJ} -L./lib/ -lhwloc -lRACE -Wl,-rpath=${PWD}/lib/
+libmpk.so: ${OBJ}
+	${CXX} ${CXXFLAGS} -I${RACE_INCDIR} -I./include/ -shared -o lib/libmpk.so ${OBJ} -L${RACE_LIBDIR} -lhwloc -lRACE -Wl,-rpath=${PWD}/lib/
 
 %.o: %.c
-	${CXX} ${CXXFLAGS} -c $<
+	${CXX} ${CXXFLAGS} -I${RACE_INCDIR} -I./include/ -c $<
