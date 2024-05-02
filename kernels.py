@@ -17,13 +17,11 @@ import sellcs
 
 import sys
 
-have_RACE = False
-
 if '-use_RACE' in sys.argv:
     print('Using C kernels and RACE on CPU')
     import kernels_c as cpu
-    import race_kernels as race_mpk
-    have_RACE = True
+    import race_mpk
+    from race_mpk import have_RACE
 elif '-c_kernels' in sys.argv:
     print('Using C kernels on CPU')
     import kernels_c as cpu

@@ -11,6 +11,7 @@
 import numpy as np
 from scipy.sparse import *
 from kernels import *
+from race_mpk import have_RACE
 
 class poly_op:
     '''

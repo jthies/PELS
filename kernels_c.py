@@ -10,13 +10,8 @@
 
 import numpy as np
 from ctypes import *
-from numpy.ctypeslib import as_ctypes
-from numpy.ctypeslib import as_array
+from numpy.ctypeslib import as_ctypes, as_array
 import os
-
-from scipy.io import mmread
-from matrix_generator import create_matrix
-import argparse
 
 # some stuff is missing here up to now:
 from kernels_cpu import copy_vector, copy_csr_arrays, memory_benchmarks, sell_spmv, vscale
