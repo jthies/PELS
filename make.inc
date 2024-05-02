@@ -24,6 +24,6 @@ CXXFLAGS=${CFLAGS}
 #CXXFLAGS=${CFLAGS}
 
 # In order to enable RACE cache-blocking, you also have to set these variables:
-RACE_INCDIR=$HOME}/local/include
-RACE_LIBDIR=${HOME}/local/lib/RACE/
+RACE_INCDIR=${HOME}/local/include
+RACE_LIBDIR=${HOME}/local/lib/RACE
 

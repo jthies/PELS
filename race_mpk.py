@@ -1,10 +1,12 @@
+import os
 from ctypes import *
+from numpy.ctypeslib import as_ctypes, as_array
 
 mpk_c_functions = None
 have_RACE = False
 
+os.system("cd RACE && make -j")
 try:
-    os.system("cd RACE && make -j")
     # import the C library -> c_functions object
     so_file = "RACE/lib/libmpk.so"
     mpk_c_functions = CDLL(so_file)

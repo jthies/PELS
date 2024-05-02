@@ -12,6 +12,7 @@ import numpy as np
 from scipy.sparse import *
 from kernels import *
 from race_mpk import have_RACE
+import sys
 
 class poly_op:
     '''
@@ -54,10 +55,13 @@ class poly_op:
         self.L = -tril(self.A1,-1).tocsr()
         self.U = -triu(self.A1,1).tocsr()
         self.mpkHandle = None
+        self.use_RACE = False
+        if have_RACE and '-use_RACE' in sys.argv:
+            self.use_RACE = True
         self.permute =None
         self.unpermute = None
         #if we have RACE, use it
-        if have_RACE:
+        if self.use_RACE:
             split=True
             highestPower=2*poly_k+1
             print("Using RACE for cache blocking: cache_size=", cache_size, ", power=", highestPower)
