@@ -130,6 +130,11 @@ if __name__ == '__main__':
     # counters and timers:
     reset_counters()
 
+    # There is a performance issue with the Python Garbage Collector and calling
+    # C functions from RACE, so we disable the GC if RCE is requested.
+    if args.use_RACE:
+        gc.disable()
+
     t0 = perf_counter()
 
     t0_pre = perf_counter()
@@ -198,3 +203,6 @@ if __name__ == '__main__':
     print('Total time for constructing precon: %g seconds.'%(t_pre))
     print('Total time for solving: %g seconds.'%(t_soln))
     print('Total time for CG: %g seconds.'%(t_CG))
+
+    if args.use_RACE:
+        gc.enable()
