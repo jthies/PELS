@@ -60,7 +60,7 @@ A smaller variant, SpinSZ22 is shown below:
 
 SpinSZ22 sparsity pattern | SpinSZ22 compressed view                 
 --------------------------|---------------------------------------------
-<img src="spinSZ22.png" alt="SpinSZ22 pattern" width="80"/> | <img src="spinSZ22_ELL.png" alt="SpinSZ22 compressed form" width="80"/> |
+<img src="spinSZ22.png" alt="SpinSZ22 pattern" width="200"/> | <img src="spinSZ22_ELL.png" alt="SpinSZ22 compressed form" width="200"/> |
 
 Better SpMV performance on the GPU can be achieved by using the SELL-C-sigma format:
 
