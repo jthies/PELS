@@ -14,6 +14,7 @@ from numba import cuda, float64
 import scipy
 from math import *
 import sellcs
+import json
 
 def memory_benchmarks():
     benchmarks = {'label': 'undefined', 'triad': 0, 'load': 0, 'store': 0, 'copy': 0}
