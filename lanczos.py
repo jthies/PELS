@@ -81,8 +81,8 @@ if __name__=='__main__':
     if args.matfile != 'None':
         if args.matgen!='None':
             print('got both -matfile and -matgen, the latter will be ignored.')
-        if not args.matfile.endswith(('.mm','.mtx')):
-            raise(ValueError('Expecting MatrixMarket file with extension .mm or .mtx'))
+        if not args.matfile.endswith(('.mm','.mtx','.mm.gz','.mtx.gz')):
+            raise(ValueError('Expecting MatrixMarket file with extension .mm[.gz] or .mtx[.gz]'))
         A = csr_matrix(mmread(args.matfile))
     elif args.matgen != 'None':
         A = create_matrix(args.matgen)
