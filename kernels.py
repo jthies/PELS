@@ -16,11 +16,12 @@ import numba
 import sellcs
 
 import sys
+import os
 
 have_c_kernels = False
 have_RACE = False
 
-if '-c_kernels' in sys.argv or '-use_RACE' in sys.argv:
+if '-c_kernels' in sys.argv or '-use_RACE' in sys.argv or 'USE_C_KERNELS' in os.environ or 'USE_RACE' in os.environ:
     try:
         import kernels_c as cpu
         have_c_kernels=True
