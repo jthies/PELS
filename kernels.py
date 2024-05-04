@@ -17,17 +17,28 @@ import sellcs
 
 import sys
 
-if '-use_RACE' in sys.argv:
-    print('Using C kernels and RACE on CPU')
-    import kernels_c as cpu
-    import race_mpk
-    from race_mpk import have_RACE
-elif '-c_kernels' in sys.argv:
-    print('Using C kernels on CPU')
-    import kernels_c as cpu
+have_c_kernels = False
+have_RACE = False
+
+if '-c_kernels' in sys.argv or '-use_RACE' in sys.argv:
+    try:
+        import kernels_c as cpu
+        have_c_kernels=True
+        print('Using C kernels on CPU')
+    except:
+        import kernels_cpu as cpu
+        print('Failed to import/compile C kernels, you may need to adjust "make.inc".\n'+
+              'Falling back to numba-compiled kernels')
 else:
     print('Using Numba kernels on CPU')
     import kernels_cpu as cpu
+
+if '-use_RACE' in sys.argv:
+    if not have_c_kernels:
+        print('-use_RACE is ignored because C kernels are not available.')
+    else:
+        import race_mpk
+        have_RACE = race_mpk.have_RACE
 
 # for benchmarking numpy/scipy implementations,
 # uncomment this line instead of the above:
