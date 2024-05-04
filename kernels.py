@@ -329,7 +329,9 @@ def perf_report(type):
     if bench['label'] == 'undefined':
         have_bench = False
         print('(roofline values will be skipped -- use cpu.json and/or gpu.json to provide memory bandwidth data)')
-
+    else:
+        print('(note that the hardware info is taken from [cpu|gpu].json, if does not match your system,\n'+
+              'you may want to update those files or delete them to skip the roofline prediction)')
     if type == 'cpu':
         nthreads = numba.get_num_threads()
         print('Number of threads: %d'%(nthreads))
@@ -341,18 +343,24 @@ def perf_report(type):
     # total number of functions called
     total_calls = 0
 
-    print('kernel\tcalls\tbw_meas\tbw_roofline\tt_meas/call\tt_roofline/call\n')
+    print('--------\t-----\t---------------\t---------------\t---------------\t---------------')
+    print('kernel  \tcalls\t bw_meas       \t bw_roofline   \t t_meas/call   \tt_roofline/call')
+    print('========\t=====\t===============\t===============\t===============\t===============')
     for kern in ('dot', 'axpby', 'spmv'):
         if calls[kern]>0:
             t_tot += time[kern]
             total_calls += calls[kern]
             if have_bench:
-                print('%s\t%d\t%g GB/s\t%g GB/s\t%g s \t%g s '%
+                print('%8s\t%5d\t%8.4g GB/s\t%8.4g GB/s\t%8.4g s \t%8.4g s '%
                     (kern, calls[kern], (load[kern]+store[kern])*1e-9/time[kern], bench[bench_map[kern]], time[kern]/calls[kern], (load[kern]+store[kern])*1e-9/bench[bench_map[kern]]/calls[kern]))
                 t_mod += (load[kern]+store[kern])*1e-9/bench[bench_map[kern]]
             else:
-                print('%s\t%d\t%g GB/s\t - \t%g s \t - '%
+                print('%8s\t%5d\t%8.4g GB/s\t   -    \t%8.4g s \t   -    '%
                     (kern, calls[kern], (load[kern]+store[kern])*1e-9/time[kern], time[kern]/calls[kern]))
 
-    print('Total\t \t \t \t \t \t %g s \t %g s'%(t_tot, t_mod))
-
+    print('--------\t-----\t---------------\t---------------\t---------------\t---------------')
+    if have_bench:
+        print('%8s\t     \t               \t               \t %8.4g s \t %8.4g s'%('Total',t_tot, t_mod))
+    else:
+        print('%8s\t     \t               \t               \t %8.4g s \t%8s'%('Total',t_tot, '   n/a  '))
+    print('--------\t-----\t---------------\t---------------\t---------------\t---------------')

@@ -113,5 +113,5 @@ export NUMBA_NUM_THREADS=16
 To solve a linear system with the Laplace operator above:
 
 ```bash
-${LAUNCH} python3 main_cg.py -matgen Laplace5000x5000 -tol 1e-3
+${LAUNCH} python3 pcg.py -matgen Laplace5000x5000 -tol 1e-3
 ```
