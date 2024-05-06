@@ -123,6 +123,7 @@ export CUDA_VISIBLE_DEVICES=""
 ```
 
 We use ``taskset`` to restrict threads to one NUMA domain and solve a 5-point Laplace problem with 4M unkowns:
+
 ```bash
 $ taskset -c 0-15 python3 pcg.py -matgen Laplace2000x2000 -maxit 5000
 [...]
@@ -157,7 +158,7 @@ x = L^{T,k}y
 This is a very simple method and will typically not lead to faster execution despite reducing the number of CG iterations:
 
 ```bash
-jthies@cmp288:~/PELS$ env OMP_NUM_THREADS=16 taskset -c 0-15 python3 pcg.py -matgen Laplace2000x2000 -maxit 5000 -poly_k 1
+$ env OMP_NUM_THREADS=16 taskset -c 0-15 python3 pcg.py -matgen Laplace2000x2000 -maxit 5000 -poly_k 1
 [...]
 number of CG iterations: 1958
 relative residual of computed solution: 7.856624e-10
@@ -189,7 +190,7 @@ The demo framework includes flags ``-c_kernels`` to run with a C/OpenMP backend,
 preconditioner:
 
 ```bash
-env OMP_NUM_THREADS=16 taskset -c 0-15 python3 pcg.py -matgen Laplace2000x2000 -maxit 5000 -poly_k 1 -use_RACE
+$ env OMP_NUM_THREADS=16 taskset -c 0-15 python3 pcg.py -matgen Laplace2000x2000 -maxit 5000 -poly_k 1 -use_RACE
 [...]
 number of CG iterations: 1900
 relative residual of computed solution: 7.763694e-10
