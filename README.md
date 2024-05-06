@@ -24,7 +24,9 @@ pip install --user -r requirements.txt
 
 In order to use an NVidia GPU, you also need cuda.
 For using the C backend (in particular in combination with RACE, see below), you need a C compiler
-like GCC or Intel.
+like GCC or Intel. We recommend the Intel LLVM compilers (icx and icpx). Edit ``make.inc`` to match your system.
+Required C code is automatically compiled when running with ``-use_RACE`` or ``-c_kernels``.
+The [RACE library](https://github.com/RRZE-HPC/RACE) must be separately installed.
 
 ## Testing the installation
 
@@ -33,6 +35,9 @@ In that case, please ignore warnings about under-utilization of the device.
 To specifically test the C backend, use ``env USE_C_KERNELS=1 pytest``. To see all output from the tests (even those that pass), you can use the '-s' flag.
 
 # Example usage
+
+There are two drivers: ``lanczos.py`` contains a very simple Lanczos eigenvalue solver to compute the smallest eigenvalue of a matrix. ``'pcg.py`` can be used to solve a (symmetric and positive definite) linear system by the Conjugate Gradient method, optionally with a simple polynomial preconditioner.
+Both drivers can be run with the ``--help`` option to get a list of supported parameters.
 
 ## Example 1: Sparse Matrix Formats on the GPU
 
@@ -105,24 +110,103 @@ kernel          calls    bw_meas         bw_roofline     t_meas/call    t_roofli
 # Example 2: CG solver on the CPU
 
 The hardware used is a node with 2 32-core Intel Sapphire Rapids CPU's and sub-NUMA clustering, giving four NUMA domains with
-16 cores each. We start by setting some environment variables to disable using the GPUs (if any) and using the OpenMP backend 
+16 cores each. For simplicity, we run on one NUMA domain (achieving good performance across NUMA domains can be tricky when
+interfaceing Python with the RACE library, see below).
+
+We start by setting some environment variables to disable using the GPUs (if any) and using the OpenMP backend 
 of Numba:
 ````bash
 export NUMBA_THREADING_LAYER=omp
+export OMP_NUM_THREADS=16
 export CUDA_VISIBLE_DEVICES=""
 ```
-
-Depending on your system, you may want to manually pin threads to cores, e.g., to run on all 16 threads of one NUMA domain:
-
+We use ``taskset`` to restrict threads to one NUMA domain and solve a 5-point Laplace problem with 4M unkowns:
 ```bash
-export LAUNCH="likwid-pin -C E:M0:0-15"
-export NUMBA_NUM_THREADS=16
+$ taskset -c 0-15 python3 pcg.py -matgen Laplace2000x2000 -maxit 5000
+[...]
+number of CG iterations: 4147
+relative residual of computed solution: 3.868042e-10
+relative error of computed solution: 1.183444e-06
+Hardware: cpu (omp, 16 threads)
+Hardware assumed for Roofline Model: Intel(R) Xeon(R) Gold 6448Y ("Sapphire Rapids")
+(note that the hardware info is taken from [cpu|gpu].json, if does not match your system,
+you may want to update those files or delete them to skip the roofline prediction)
+Number of threads: 16
+--------	-----	---------------	---------------	---------------	---------------
+kernel  	calls	 bw_meas       	 bw_roofline   	 t_meas/call   	t_roofline/call
+========	=====	===============	===============	===============	===============
+     dot	 8295	   110.7 GB/s	     120 GB/s	0.0004334 s 	  0.0004 s 
+   axpby	12444	   144.2 GB/s	      98 GB/s	0.0006657 s 	0.0009796 s 
+    spmv	 4149	   95.48 GB/s	      98 GB/s	0.003518 s 	0.003428 s 
+--------	-----	---------------	---------------	---------------	---------------
+   Total	     	               	               	    26.47 s 	    29.73 s
+--------	-----	---------------	---------------	---------------	---------------
+Total time for CG: 26.7851 seconds.
 ```
 
-## Plain CG method 
-
-To solve a linear system with the Laplace operator above:
+We can now enable a simple polynomial preconditioner and solve the quivalent system
+```math
+A = I - (L + L^T), k=1
+L^k A L^{T,k} y = L^k b
+x = L^{T,k}y
+```
+This is a very simple method and will typically not lead to faster execution despite reducing the number of CG iterations:
 
 ```bash
-${LAUNCH} python3 pcg.py -matgen Laplace5000x5000 -tol 1e-3
+jthies@cmp288:~/PELS$ env OMP_NUM_THREADS=16 taskset -c 0-15 python3 pcg.py -matgen Laplace2000x2000 -maxit 5000 -poly_k 1
+[...]
+number of CG iterations: 1958
+relative residual of computed solution: 7.856624e-10
+relative error of computed solution: 4.060175e-06
+Hardware: cpu (omp, 16 threads)
+Hardware assumed for Roofline Model: Intel(R) Xeon(R) Gold 6448Y ("Sapphire Rapids")
+(note that the hardware info is taken from [cpu|gpu].json, if does not match your system,
+you may want to update those files or delete them to skip the roofline prediction)
+Number of threads: 16
+--------	-----	---------------	---------------	---------------	---------------
+kernel  	calls	 bw_meas       	 bw_roofline   	 t_meas/call   	t_roofline/call
+========	=====	===============	===============	===============	===============
+     dot	 3917	   124.5 GB/s	     120 GB/s	0.0003854 s 	  0.0004 s 
+   axpby	13717	   127.6 GB/s	      98 GB/s	0.0007525 s 	0.0009796 s 
+    spmv	 5880	   93.69 GB/s	      98 GB/s	0.002561 s 	0.002448 s 
+--------	-----	---------------	---------------	---------------	---------------
+   Total	     	               	               	    26.89 s 	     29.4 s
+--------	-----	---------------	---------------	---------------	---------------
+Total time for constructing precon: 1.09714 seconds.
+Total time for solving: 27.1684 seconds.
+Total time for CG: 28.2707 seconds.
 ```
+As can be seen, the number of CG iterations is much lower, but the runtime is not. Every application of the triangular factor L is
+an additional ``spmv`` operation, so the relative importance of ``spmv`` increases compared to ``dot`` and ``axpby``.
+
+In order to truly benefit from this simple preconditioner, we can use **cache blocking** via the [RACE library](https://github.com/RRZE-HPC/RACE).
+The demo framework includes flags ``-c_kernels`` to run with a C/OpenMP backend, and ``-use_RACE`` (implying ``-c_kernels``) to accelerate the polynomial
+preconditioner:
+
+```bash
+env OMP_NUM_THREADS=16 taskset -c 0-15 python3 pcg.py -matgen Laplace2000x2000 -maxit 5000 -poly_k 1 -use_RACE
+[...]
+number of CG iterations: 1900
+relative residual of computed solution: 7.763694e-10
+relative error of computed solution: 2.494086e-06
+Hardware: cpu (omp, 16 threads)
+Hardware assumed for Roofline Model: Intel(R) Xeon(R) Gold 6448Y ("Sapphire Rapids")
+(note that the hardware info is taken from [cpu|gpu].json, if does not match your system,
+you may want to update those files or delete them to skip the roofline prediction)
+Number of threads: 16
+--------	-----	---------------	---------------	---------------	---------------
+kernel  	calls	 bw_meas       	 bw_roofline   	 t_meas/call   	t_roofline/call
+========	=====	===============	===============	===============	===============
+     dot	 3801	   96.61 GB/s	     120 GB/s	0.0004968 s 	  0.0004 s 
+   axpby	 5707	   127.9 GB/s	      98 GB/s	0.0007506 s 	0.0009796 s 
+    spmv	 5706	   149.8 GB/s	      98 GB/s	0.001567 s 	0.002394 s 
+--------	-----	---------------	---------------	---------------	---------------
+   Total	     	               	               	    15.11 s 	    20.77 s
+--------	-----	---------------	---------------	---------------	---------------
+Total time for constructing precon: 3.05182 seconds.
+Total time for solving: 15.2798 seconds.
+Total time for CG: 18.337 seconds.
+```
+The memory bandwidth reported for the ``spmv`` is higher than what could be delivered from RAM, indicating that 
+a substantial part of the traffic now comes from cache instead.
+
