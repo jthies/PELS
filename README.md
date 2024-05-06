@@ -1,7 +1,11 @@
 
 # PELS: Performance Engineering for (sparse) Linear Solvers Demo
 
-(Intro/overview)
+This repository is accompanying material to a [tutorial given at ISC'24](https://blogs.fau.de/hager/tutorials/isc24)
+(follow the link to find additional material).
+It contains a reasonably simple Python implementation of the SELL-C-sigma sparse matrix format and some simple iterative
+methods that heavily rely on Sparse Matrix-Vector Multiplication (SpMVM). The goal is to show that the performance of 
+such methods on Multi-Core CPUs and GPUs can be modelled quite accurately using the Roofline performance model.
 
 ## Computational backends and performance reporting
 
