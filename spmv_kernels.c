@@ -26,3 +26,22 @@ void csr_spmv(size_t N, const double *restrict val, const int *restrict rowPtr, 
         y[row]=tmp;
     }
 }
+
+// function that copies the data from CSR (or SELL-C-sigma) arrays to new ones
+// using the same OpenMP scheduling that would be used during spmv.
+void copy_csr_arrays(size_t N,
+        const double *restrict Aval, const int *restrict ArowPtr, const int *restrict Acol,
+              double *restrict val,        int *restrict rowPtr,        int *restrict col)
+{
+#pragma omp parallel for schedule(runtime)
+    for(int row=0; row<N; ++row)
+    {
+        rowPtr[row]=ArowPtr[row];
+        rowPtr[row+1]=ArowPtr[row+1];
+        for(int idx=ArowPtr[row]; idx<ArowPtr[row+1]; ++idx)
+        {
+            val[idx] += Aval[idx];
+            col[idx]=Acol[idx];
+        }
+    }
+}

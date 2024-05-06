@@ -14,6 +14,16 @@
 
 // Basic C implemenattions of axpy and dot using OpenMP.
 
+// copy y = x with multiple threads
+void copy_vector(size_t N, double *restrict X, double *restrict Y)
+{
+#pragma omp parallel for schedule(static)
+  for (size_t i = 0; i < N; i++)
+  {
+    Y[i]=X[i];
+  }
+}
+
 // Operation that loads two and writes one vector (z=a*x+y).
 void axpby(size_t N, double a, const double *restrict X, double b, double *restrict Y)
 {
@@ -30,6 +40,16 @@ void init(size_t N, double *restrict X, double val)
   for (size_t i = 0; i < N; i++)
   {
     X[i]=val;
+  }
+}
+
+// vector scaling y[i] = v[i]*x[i]
+void vscale(size_t N, double const *restrict V, double const *restrict X, double *restrict Y)
+{
+#pragma omp parallel for schedule(static)
+  for (size_t i = 0; i < N; i++)
+  {
+    Y[i]=V[i]*X[i];
   }
 }
 

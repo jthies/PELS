@@ -50,7 +50,7 @@ class poly_op:
         self.dtype = A.dtype
         # store the inverse of the square-root of the diagonal
         # s.t. isqD*A*isqD has ones on the diagonal.
-        self.isqD = spdiags([1.0/np.sqrt(A.diagonal())], [0], m=self.shape[0], n=self.shape[1])
+        self.isqD = spdiags([1.0/np.sqrt(A.diagonal())], [0], m=self.shape[0], n=self.shape[1]).tocsr()
         self.A1 = self.isqD*A*self.isqD
         self.L = -tril(self.A1,-1).tocsr()
         self.U = -triu(self.A1,1).tocsr()
