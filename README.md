@@ -93,22 +93,24 @@ kernel          calls    bw_meas         bw_roofline     t_meas/call    t_roofli
 --------        -----   --------------- --------------- --------------- ---------------
 ```
 
-For the larger and very regular 5-point Laplace matrix with 25M rows and columns, the CSR format works just fine,
+For the larger and very regular 5-point Laplace matrix with 100M rows and columns, the CSR format works almost as well as SELL-C-sigma on this GPU,
 and kernel launch latency has less impact, so that the performance of all kernels is quite good:
 ```bash
-$ python lanczos.py -matgen Laplace5000x5000 -tol 1e-3
+$ python lanczos.py -matgen Laplace10000x10000 -tol 1e-3 -fmt CSR
 [...]
-Smallest eigenvalue computed: 1.640077e-06
-Hardware: NVIDIA A100 80GB PCIe
---------        -----   --------------- --------------- --------------- ---------------
-kernel          calls    bw_meas         bw_roofline     t_meas/call    t_roofline/call
-========        =====   =============== =============== =============== ===============
-     dot         1653       1185 GB/s       1560 GB/s   0.0003375 s     0.0002564 s 
-   axpby         2479       1302 GB/s       1690 GB/s   0.0004607 s     0.000355 s 
-    spmv          826       1301 GB/s       1690 GB/s   0.001614 s      0.001242 s 
---------        -----   --------------- --------------- --------------- ---------------
-   Total                                                    3.033 s          2.33 s
---------        -----   --------------- --------------- --------------- ---------------
+Smallest eigenvalue computed: 6.847751e-07
+Hardware assumed for Roofline Model: NVIDIA A100 80GB PCIe
+(note that the hardware info is taken from [cpu|gpu].json, if does not match your system,
+you may want to update those files or delete them to skip the roofline prediction)
+--------	-----	---------------	---------------	---------------	---------------
+kernel  	calls	 bw_meas       	 bw_roofline   	 t_meas/call   	t_roofline/call
+========	=====	===============	===============	===============	===============
+     dot	 1831	    1360 GB/s	    1560 GB/s	0.0008821 s 	0.0007691 s 
+   axpby	 2746	    1568 GB/s	    1690 GB/s	0.001531 s 	 0.00142 s 
+    spmv	  915	    1470 GB/s	    1690 GB/s	0.005714 s 	 0.00497 s 
+--------	-----	---------------	---------------	---------------	---------------
+   Total	     	               	               	    11.05 s 	    9.856 s
+--------	-----	---------------	---------------	---------------	---------------
 ```
 
 # Example 2: CG solver on the CPU
