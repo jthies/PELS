@@ -115,11 +115,13 @@ interfaceing Python with the RACE library, see below).
 
 We start by setting some environment variables to disable using the GPUs (if any) and using the OpenMP backend 
 of Numba:
-````bash
+
+```bash
 export NUMBA_THREADING_LAYER=omp
 export OMP_NUM_THREADS=16
 export CUDA_VISIBLE_DEVICES=""
 ```
+
 We use ``taskset`` to restrict threads to one NUMA domain and solve a 5-point Laplace problem with 4M unkowns:
 ```bash
 $ taskset -c 0-15 python3 pcg.py -matgen Laplace2000x2000 -maxit 5000
@@ -145,11 +147,13 @@ Total time for CG: 26.7851 seconds.
 ```
 
 We can now enable a simple polynomial preconditioner and solve the quivalent system
+
 ```math
 A = I - (L + L^T), k=1
 L^k A L^{T,k} y = L^k b
 x = L^{T,k}y
 ```
+
 This is a very simple method and will typically not lead to faster execution despite reducing the number of CG iterations:
 
 ```bash
@@ -176,6 +180,7 @@ Total time for constructing precon: 1.09714 seconds.
 Total time for solving: 27.1684 seconds.
 Total time for CG: 28.2707 seconds.
 ```
+
 As can be seen, the number of CG iterations is much lower, but the runtime is not. Every application of the triangular factor L is
 an additional ``spmv`` operation, so the relative importance of ``spmv`` increases compared to ``dot`` and ``axpby``.
 
@@ -207,6 +212,7 @@ Total time for constructing precon: 3.05182 seconds.
 Total time for solving: 15.2798 seconds.
 Total time for CG: 18.337 seconds.
 ```
+
 The memory bandwidth reported for the ``spmv`` is higher than what could be delivered from RAM, indicating that 
 a substantial part of the traffic now comes from cache instead.
 
