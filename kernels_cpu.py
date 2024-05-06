@@ -28,7 +28,8 @@ def memory_benchmarks():
     else:
         result = benchmarks.copy()
         for k in result.keys():
-            result[k] *=nnuma
+            if k != 'label':
+                result[k] *=nnuma
         return result
 
 

@@ -114,7 +114,7 @@ if __name__ == '__main__':
     ## the case, but if you are facing obvious performnace
     ## problems with the C kernels, you may want to disalbe
     ## garbage collection:
-    # gc.disable()
+    gc.disable()
 
     parser = get_argparser()
 
@@ -197,9 +197,11 @@ if __name__ == '__main__':
         # We can't do it consistently beforehand because
         # we're calling library functions like numpy 'rand'
         # and scipy 'mmread'.
-        x0 = copy(x0)
-        b  = copy(b)
-        A  = copy(A)
+        if args.numa:
+            x0 = copy(x0)
+            b  = copy(b)
+            A  = copy(A)
+
     # take compilation time out of the balance:
     compile_all()
 
@@ -211,13 +213,6 @@ if __name__ == '__main__':
     # runtime as predicted by the roofline model, so reset all
     # counters and timers:
     reset_counters()
-
-    ## There is a performance issue with the Python Garbage Collector and calling
-    ## C functions from RACE, so we disable the GC if RCE is requested.
-    ## (see comment above). Most likely it occurs if RACE is compiled with
-    ## Non-LLVM compilers, and the preferred compiler of RACE is icc/icpc.
-    if args.use_RACE:
-        gc.disable()
 
     t0 = perf_counter()
 
@@ -281,7 +276,7 @@ if __name__ == '__main__':
 
     hw_string = type
     if type=='cpu':
-        hw_string+=' ('+str(numba.get_num_threads())+' cores)'
+        hw_string+=' ('+str(numba.threading_layer())+', '+str(numba.get_num_threads())+' threads)'
     print('Hardware: '+hw_string)
     perf_report(type)
     if args.poly_k>0:
@@ -289,5 +284,3 @@ if __name__ == '__main__':
         print('Total time for solving: %g seconds.'%(t_soln))
     print('Total time for CG: %g seconds.'%(t_CG))
 
-    if args.use_RACE:
-        gc.enable()

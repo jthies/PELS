@@ -76,9 +76,9 @@ class poly_op:
             #not needed diagonal is one, due to normalization
             #A_prec.isqD = spdiags([1.0/np.sqrt(A.diagonal())], [0], m=A.shape[0], n=A.shape[1])
 
-        self.t1 = np.empty(self.shape[0], dtype=self.dtype)
-        self.t2 = np.empty(self.shape[0], dtype=self.dtype)
-        self.t3 = np.empty(self.shape[0], dtype=self.dtype)
+        self.t1 = np.zeros(self.shape[0], dtype=self.dtype)
+        self.t2 = np.zeros(self.shape[0], dtype=self.dtype)
+        self.t3 = np.zeros(self.shape[0], dtype=self.dtype)
 
         # in case A has CUDA arrays, also copy over our compnents:
         self.isqD = to_device(self.isqD)
@@ -89,10 +89,6 @@ class poly_op:
         self.t1 = to_device(self.t1)
         self.t2 = to_device(self.t2)
         self.t3 = to_device(self.t3)
-
-        init(self.t1,0.0)
-        init(self.t2,0.0)
-        init(self.t3,0.0)
 
     def prec_rhs(self, b, prec_b):
         '''

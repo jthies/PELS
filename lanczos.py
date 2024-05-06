@@ -68,6 +68,7 @@ if __name__=='__main__':
     from scipy.sparse import csr_matrix
     from scipy.io import mmread
     from sellcs import *
+    import gc
 
     parser = get_argparser()
 
@@ -77,6 +78,16 @@ if __name__=='__main__':
 
     if args.seed is not None:
         np.random.seed(args.seed)
+
+    ## **Note:** The Python garbage collector (gc)
+    ## can kill the performance of the C kernels
+    ## for some obscure reason (possibly a conflict
+    ## between Numba/LLVM and other compilers like GCC).
+    ## For the pure Python/numba/cuda kernels, this is not
+    ## the case, but if you are facing obvious performnace
+    ## problems with the C kernels, you may want to disalbe
+    ## garbage collection:
+    gc.disable()
 
     if args.matfile != 'None':
         if args.matgen!='None':
@@ -101,13 +112,18 @@ if __name__=='__main__':
     else:
         print('Matrix format: CSR')
 
+    # If a GPU is found, this copies data to the GPU
+    # and creates cuda arrays in A.
+    # On the CPU, this checks the '-numa' flag and if found,
+    # copies the data arrays with first-touch initialization
+    # to try to optimize memory accesses.
+    A = to_device(A)
+    v0 = to_device(v0)
+
     if available_gpus()>0:
         type = 'gpu'
-        A = to_device(A)
-        v0 = to_device(v0)
     else:
         type = 'cpu'
-
 
     print('Will run on '+type)
 

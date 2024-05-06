@@ -126,10 +126,28 @@ def reset_counters():
         store[k] = 0.0
         flop[k] = 0.0
 
+def same_array(x,y):
+    '''
+    returns 1 if the C pointer of the two arrays is identical, 0 otherwise
+    '''
+    if hasattr(x,'__cuda_array_interface__'):
+        return int(x.__cuda_array_interface__['data'][0]==y.__cuda_array_interface__['data'][0])
+    elif hasattr(x,'__array_interface__'):
+        return int(x.__array_interface__['data'][0]==y.__array_interface__['data'][0])
+    else:
+        return False
+
 def to_device(A):
+    '''
+    If a GPU is found, this creates CUDA arrays and copies data to the device.
+    On the CPU, we check if '-numa' is set on the command-line, and if so,
+    copy the data arrays with correct first-touch initialization.
+    '''
     if available_gpus()>0:
         return gpu.to_device(A)
     else:
+        if '-numa' in sys.argv:
+            A = copy(A)
         return A
 
 def from_device(A):
@@ -298,7 +316,7 @@ def axpby(a,x,b,y):
     t1 = perf_counter()
     time['axpby']  += t1-t0
     calls['axpby'] += 1
-    load['axpby']  += 16*x.size
+    load['axpby']  += (2-same_array(x,y))*8*x.size
     store['axpby'] += 8*x.size
     flop['axpby'] += 2*x.size
 
@@ -311,8 +329,8 @@ def dot(x,y):
     t1 = perf_counter()
     time['dot']  += t1-t0
     calls['dot'] += 1
-    load['dot']  += 16*x.size
-    flop['spmv'] += 2*x.size
+    load['dot']  += (2-same_array(x,y))*8*x.size
+    flop['dot'] += 2*x.size
     return s
 
 def perf_report(type):
@@ -325,7 +343,7 @@ def perf_report(type):
     or remove them to skip printing the roofline upper bounds.
     '''
     bench = memory_benchmarks(type)
-    print('Hardware: '+bench['label'])
+    print('Hardware assumed for Roofline Model: %s'%(bench['label']))
     have_bench = True
     if bench['label'] == 'undefined':
         have_bench = False
