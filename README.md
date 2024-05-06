@@ -156,8 +156,8 @@ Total time for CG: 26.7851 seconds.
 We can now enable a simple polynomial preconditioner and solve the quivalent system
 
 ```math
-A = I - (L + L^T), k=1
-L^k A L^{T,k} y = L^k b
+A = I - (L + L^T), k=1 
+L^k A L^{T,k} y = L^k b 
 x = L^{T,k}y
 ```
 
