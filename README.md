@@ -18,7 +18,7 @@ The Python code in this repository requires only standard libraries like numpy, 
 To make sure they are available, you can use the following command:
 
 ```bash
-pip install -r requirements.txt
+pip install --user -r requirements.txt
 ```
 ## Optional requirements
 
