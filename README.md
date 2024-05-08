@@ -32,6 +32,23 @@ like GCC or Intel. We recommend the Intel LLVM compilers (icx and icpx). Edit ``
 Required C code is automatically compiled when running with ``-use_RACE`` or ``-c_kernels``.
 The [RACE library](https://github.com/RRZE-HPC/RACE) must be separately installed.
 
+In order to get a Roofline estimate at the end of a run, you should adapt the files 
+``cpu.json`` and/or ``gpu.json`` to your platform. For example, to get the benchmark values
+for a single NUMA domain using ``likwid``, you could run:
+```bash
+$ likwid-bench -t load_avx -W M0:8GB|grep "MByte/s"
+$ likwid-bench -t store_avx -W M0:8GB|grep "MByte/s"
+$ likwid-bench -t copy_avx -W M0:8GB|grep "MByte/s"
+$ likwid-bench -t triad_avx -W M0:8GB|grep "MByte/s"
+
+A similar benchmark tool for NVidia GPUs can be found [here](https://github.com/bcumming/cuda-stream).
+You can run it with
+```bash
+./stream -s -n 1000000000
+```
+```
+If you do not have the correct data for your system, you can delete the two files to skip printing the (incorrect) Roofline prediction.
+
 ## Testing the installation
 
 The command ``pytest`` will execute a few simple tests. If a GPU and cuda are available, they will be run on the GPU.
