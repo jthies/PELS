@@ -174,7 +174,11 @@ We can now enable a simple polynomial preconditioner and solve the quivalent sys
 
 ```math
 A = I - (L + L^T), k=1
+```
+```math
 L^k A L^{T,k} y = L^k b
+```
+```math
 x = L^{T,k}y
 ```
 
