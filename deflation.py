@@ -149,7 +149,7 @@ class DeflatedOperator:
         self.cu_ipart = to_device(self.ipart)
         self.cu_nmembers = to_device(self.nmembers)
 
-        self.valV = 1.0/self.nmembers.astype(np.float64)
+        self.valV = 1.0/np.sqrt(self.nmembers.astype(np.float64))
         self.cu_valV = to_device(self.valV)
 
         nchunks = len(self.A.indptr)-1

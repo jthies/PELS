@@ -30,7 +30,7 @@ def build_numpy_V(A_defl):
         for i in range(n):
             V[i,A_defl.part[i]] = 1.0
         nmembers = np.sum(V, axis=0, dtype='int32')
-        V = V @ np.diag(1.0/nmembers.astype('float64'))
+        V = V @ np.diag(1.0/np.sqrt(nmembers.astype('float64')))
         return V
 
 class DeflationTest(unittest.TestCase):
@@ -53,6 +53,7 @@ class DeflationTest(unittest.TestCase):
 
         # explicitly build the V operator using numpy
         self.V = build_numpy_V(self.A_defl)
+        self.A_c = self.V.T @ self.A_csr @ self.V
 
         self.eps = 1e-12
 
@@ -101,7 +102,6 @@ class DeflationTest(unittest.TestCase):
         '''
         Compute A_c = V^TAV on host (numpy) and device, and compare the two
         '''
-        A_c_ref = self.V.T @ self.A_csr @ self.V
         A_c = to_device(np.zeros((self.nc,self.nc), dtype='float64'))
         nchunks = len(self.A_gpu.indptr)-1
         C = self.A_gpu.C
@@ -110,7 +110,8 @@ class DeflationTest(unittest.TestCase):
         cu_sell_restrict[nchunks, C](self.A_gpu.cu_data, self.A_gpu.cu_indptr, self.A_gpu.cu_indices, n,
                                      self.A_defl.cu_part, self.A_defl.cu_valV, A_c)
         cuda.synchronize()
-        assert diff_norm(A_c, A_c_ref) < self.eps
+        assert diff_norm(A_c, self.A_c) < self.eps
+
     def test_applyQ_compare_numpy(self):
         ''' Test that Q = V(V'AV)^{-1}V' satisfies V'A Q = V' '''
         x = to_device(np.random.rand(self.n))
@@ -120,8 +121,9 @@ class DeflationTest(unittest.TestCase):
         y_host = to_host(y)
         x_host = to_host(x)
 
-        # V' A y should match V' x
-        lhs = self.V.T @ (self.A_csr @ y_host)
+        # We now have y = Qx = V(V'AV)^{-1} V'x
+        # A_c*V' y should match V' x, where A_c = V'AV
+        lhs = self.A_c @ (self.V.T @ y_host)
         rhs = self.V.T @ x_host
 
         error = diff_norm(lhs, rhs)
