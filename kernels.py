@@ -30,14 +30,15 @@ def available_gpus():
     return len(cuda.gpus)
 
 def compile_all():
-    n=10
+    print('INFO: Pre-compiling CUDA kernels. Please ignore low-occupancy warnings here.')
+    n=100
     x=np.ones(n,dtype='float64')
     y=np.ones(n,dtype='float64')
     a=numba.float64(1.0)
     b=numba.float64(1.0)
-    A1=(scipy.sparse.rand(n,n,0.6) + scipy.sparse.eye(n,n)).tocsr()
+    A1 = scipy.sparse.diags([-1.0, 2.0, -1.0], [-1, 0, 1], shape=(n, n)).tocsr()
     L =scipy.sparse.tril(A1).tocsr()
-    A2=sellcs.sellcs_matrix(A1, C=1, sigma=1)
+    A2=sellcs.sellcs_matrix(A1, C=32, sigma=1)
 
     # compile GPU kernels:
     if available_gpus()==0:
@@ -59,6 +60,7 @@ def compile_all():
     trsv(L,x,y)
     diag_spmv(A1,x,y)
     reset_counters()
+    print('INFO: Compile step done.')
 
 def to_device(A):
 
