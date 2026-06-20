@@ -93,7 +93,7 @@ def cg_solve(A, M, b, x0, tol, maxit, verbose=True, x_ex=None):
         else:
             res_norm_sq = rho
 
-        if verbose and iter%10==0:
+        if verbose and (iter+1)%10==0:
             if x_ex is not None:
                 axpby(1.0, x, 0.0, err)
                 axpby(-1.0, x_ex, 1.0, err)
@@ -109,6 +109,15 @@ def cg_solve(A, M, b, x0, tol, maxit, verbose=True, x_ex=None):
         axpby(1.0, z, beta, p)
 
     res_norm_sq = dot(r, r)
+    if verbose and (iter+1)%10!=0:
+        if x_ex is not None:
+            axpby(1.0, x, 0.0, err)
+            axpby(-1.0, x_ex, 1.0, err)
+            err_norm = np.sqrt(dot(err, err))
+            print('%d\t%e\t%e'%(iter+1, np.sqrt(res_norm_sq), err_norm))
+        else:
+            print('%d\t%e'%(iter+1, np.sqrt(rho)))
+    
     return x, np.sqrt(res_norm_sq), iter
 
 import numba
@@ -264,7 +273,7 @@ def pcg_demo(args_dict={}, parse_commandline=False):
     print('Total time for CG: %g seconds.'%(t_CG))
 
 if __name__ == '__main__':
+
     # by default, the driver gets all arguments from the command-line
-    d = {'matrix': 'Laplace128x128', 'fmt': 'SELL', 'sigma': 128}
-    pcg_demo(d)
+    pcg_demo(parse_commandline=True)
 
